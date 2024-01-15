@@ -1,0 +1,1 @@
+[{"name": "smartbugs_short_addresses_short_address_example.sol", "path": "/workspaces/solidity/integrate_dataset/short_addresses/smartbugs/smartbugs_short_addresses_short_address_example.sol", "source": "https://ericrafaloff.com/analyzing-the-erc20-short-address-attack/", "vulnerabilities": [{"lines": [18], "category": "short_addresses"}], "version": "0.4.11"}]
