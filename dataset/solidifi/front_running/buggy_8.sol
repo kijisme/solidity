@@ -2,7 +2,7 @@
  * Source Code first verified at https://etherscan.io on Tuesday, May 7, 2019
  (UTC) */
 
-pragma solidity >=0.4.22 <0.6.0;
+pragma solidity ^0.5.11;
 
 contract Ownable {
 address payable winner_TOD21;

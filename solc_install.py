@@ -30,7 +30,7 @@ def process_clean_source(clean_dir):
     for contract_name in os.listdir(clean_dir):
         if contract_name.endswith('.sol'):
             all_clean.append({  'name':contract_name,
-                                'path':os.path.join(clean_dir, contract_name)})
+                                'path':os.path.join('clean', contract_name)})
     with open(os.path.join(clean_dir, 'vulnerabilities.json'), 'w') as outfile:
         json.dump(all_clean, outfile)
 
@@ -112,40 +112,55 @@ def install_solc(sol_version_list):
 ''' 测试单个文件'''
 if __name__ == "__main__":
 
+    pattern = r'^\d+\.\d+\.\d+$'
+
     clean_dir = '/workspaces/solidity/dataset/clean' # [156:2742] [480:2742]  2612
     solidifi_dir = '/workspaces/solidity/dataset/solidifi' # [0:350] [48:350] 
     smartbugs_dir = '/workspaces/solidity/dataset/smartbugs' # [0:143] [13:143]
-    all_dir = [clean_dir,solidifi_dir, smartbugs_dir]
-    #  
+
+    all_dir = [clean_dir, solidifi_dir, smartbugs_dir]
+    #  clean_dir,, solidifi_dirsmartbugs_dir, solidifi_dir
     output_dir = '/workspaces/solidity/json'
 
     error_file = {}
-    error_json_path = os.path.join(output_dir, 'error.json')
     all_versions = set()
     # 加载内部文件    
     for dir in all_dir:
+        dataset_name = dir.split('/')[-1]
         count = 0
         error_file[dir.split('/')[-1]] = []
         sol_json_path = os.path.join(dir, 'vulnerabilities.json')
         output_json_path = os.path.join(output_dir, dir.split('/')[-1] + '.json')
+        # 读取文件
         with open(sol_json_path, 'r') as f:
             json_file = json.load(f)
         
+        # 添加信息
         for item in json_file:
             sol_file_path = os.path.join(root_path, 'dataset', item['path'])
             item['version'] = get_solc_version(sol_file_path)
             if item['version'] == 'None':
                 count = count + 1
-                item['version'] == '0.4.25'
+                if dataset_name == 'smartbugs':
+                    item['version'] = '0.4.25'
+                elif dataset_name == 'solidifi':
+                    item['version'] = '0.5.11'
+                elif dataset_name == 'clean':
+                    item['version'] = '0.4.25'
                 error_file[dir.split('/')[-1]].append(item)
             else:
+                if not re.match(pattern, item['version']):
+                    item['version'] = '0.4.25'
+                elif item['version'].split('.')[0] != '0' or item['version'].split('.')[1] > '8':
+                    item['version'] = '0.4.25'
+                elif item['version'].split('.')[-1] == '00':
+                    item['version'] =  '.'.join(item['version'].split('.')[:-1] + ['0'])
                 all_versions.add(item['version'])
         print(count,':',len(json_file))
+
+        # 存储文件
         with open(output_json_path, 'w') as f:
             json.dump(json_file, f)
 
-    with open(error_json_path, 'w') as f:
-            json.dump(error_file, f)
-    
     install_solc(all_versions)
-    # print(all_versions)
+    print(all_versions)
