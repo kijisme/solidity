@@ -64,7 +64,7 @@ def try_solc(json_file, error_json):
 ''' 测试单个文件'''
 if __name__ == "__main__":
     # ,'/workspaces/solidity/json/clean.json','/workspaces/solidity/json/solidifi.json', '/workspaces/solidity/json/solidifi.json'
-    contracts_jsons = ['/workspaces/solidity/json/clean.json', '/workspaces/solidity/json/solidifi.json', '/workspaces/solidity/json/smartbugs.json']
+    contracts_jsons = ['/workspaces/solidity/json/clean.json']
     error_json = '/workspaces/solidity/json/error.json'
     result = []
     for contracts_json in contracts_jsons:

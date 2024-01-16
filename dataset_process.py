@@ -116,7 +116,7 @@ def integrate_json(target_dir, vuln_all):
             with open(path, 'r') as f:
                 item = json.load(f)
                 items.extend(list(item))
-        with open(os.path.join(vuln_dir, 'vulnerabilities.json'), 'w') as f:
+        with open(os.path.join(vuln_dir, 'vuln_vulnerabilities.json'), 'w') as f:
             json.dump(items, f)
 
 ''' 测试单个文件'''
@@ -138,9 +138,9 @@ if __name__ == "__main__":
 
     # # 数据集转移
     # migrate_vuln_dataset(dataset_dir, target_dir, vuln_dir, json_dir)
-    # migrate_clean_dataset(dataset_dir, target_dir, clean_json)
+    migrate_clean_dataset(dataset_dir, target_dir, clean_json)
 
     # # 数据集合并
     # mkdir_integrate_dataset(target_dir, vuln_all)
-    integrate_dataset(target_dir, vuln_dir)
-    integrate_json(target_dir, vuln_all)
+    # integrate_dataset(target_dir, vuln_dir)
+    # integrate_json(target_dir, vuln_all)

@@ -205,14 +205,18 @@ def get_full_cfg_graph(vulnerabilities_info):
                         contract_graph.add_edge(str(state_var),
                                                 function.name + '_' + str(node_id),
                                                 edge_type='use')
-                
+            
+            if contract_graph is None:
+                continue
             if sol_file_graph is None:
                 sol_file_graph = deepcopy(contract_graph)
             elif sol_file_graph is not None:
-                print(type(contract_graph))
-                print(type(sol_file_graph))
                 sol_file_graph = nx.disjoint_union(contract_graph, contract_graph)
             
+        # if sol_file_graph is None:
+        #     # 记录错误文件
+
+        #     continue
         if bug_full_graph is None:
             bug_full_graph = deepcopy(sol_file_graph)
         elif bug_full_graph is not None:
@@ -258,11 +262,10 @@ def get_node_info(node, list_sol_file_vul_info):
 if __name__ == "__main__":
 
     dataset_root = f'{root_dir}/integrate_dataset'
-    isSave = False
+    isSave = True
     # 获取全部漏洞类型
-    # all_vuln_type = [x for x in os.listdir(dataset_root)]
-    # all_vuln_type.remove('clean')
-    all_vuln_type = ['other']
+    all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
+    # all_vuln_type = ['other']
 
     # 对每一种漏洞类型进行处理
     for vuln_type in all_vuln_type:
