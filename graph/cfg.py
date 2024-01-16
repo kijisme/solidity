@@ -44,7 +44,7 @@ def get_full_cfg_graph(vulnerabilities_info):
             # 添加状态变量节点
             for state_var in contract.state_variables:
                 node_token = '_'.join(['STATE_VAR', str(state_var)])
-                node_code_lines = [0]
+                node_code_lines = None
                 node_vuln_info = get_vuln_of_node(node_code_lines, list_sol_file_vul_info)
                 contract_graph.add_node(str(state_var),
                                         node_type='STATE_VAR', 
@@ -55,6 +55,7 @@ def get_full_cfg_graph(vulnerabilities_info):
                                         function_fullname=None,
                                         contract_name=contract.name, 
                                         source_file=sol_file_name)
+                # print(str(state_var))
                 
             for function in contract.functions + contract.modifiers:
                 if len(function.nodes) == 0:
@@ -203,8 +204,11 @@ def get_full_cfg_graph(vulnerabilities_info):
                 
                 ############################################
                 # print(len(contract_graph.nodes()), len(func_graph.nodes()), len(contract.state_variables))
+                if func_graph is None:
+                    continue
+                print(contract_graph.nodes())
                 contract_graph = nx.compose(contract_graph, func_graph)
-
+                print(contract_graph.nodes())
                 from utils import check_null
                 if not check_null(contract_graph):            #检查是否有空点
                     print('空点')

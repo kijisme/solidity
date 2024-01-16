@@ -1,7 +1,10 @@
-def check_null(graph):
-    for node, node_data in graph.nodes(data=True):
-        if(node_data == {}):
-            return False
+def check_null(graph_1):
+    for node_1, node_data_1 in graph_1.nodes(data=True):
+        if(node_data_1 == {}):
+            for source, target, edge_data in graph_1.edges(data=True):
+                if(source == node_1 or target == node_1):
+                    print(node_1, ':', source, target, edge_data)
+                    return False
     else:
         return True
 
