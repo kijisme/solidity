@@ -14,7 +14,6 @@ def mapping_cfg_and_cg_node_token(cfg, call_graph):
         if node_data['node_type'] == 'FUNCTION':
             if node_data['node_token'] not in dict_node_token_cfg_and_cg:
                 dict_node_token_cfg_and_cg[node_data['node_token']] = None
-                print(node_data['node_token'])
             dict_node_token_cfg_and_cg[node_data['node_token']] = {
                 'cfg_node_id': node,
                 'cfg_node_type': node_data['node_type']
@@ -69,10 +68,10 @@ def update_cfg_node_types_by_call_graph_node_types(cfg, dict_node_label):
 if __name__ == "__main__":
 
     dataset_root = f'{root_dir}/integrate_dataset'
-    isSave = False
+    isSave = True
     # 获取全部漏洞类型
-    # all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
-    all_vuln_type = ['other']
+    all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
+    # all_vuln_type = ['other']
 
     # 对每一种漏洞进行处理
     for vuln_type in all_vuln_type:

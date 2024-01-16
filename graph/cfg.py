@@ -65,7 +65,7 @@ def get_full_cfg_graph(vulnerabilities_info):
                 local_var_dict = {}
                 # 初始化函数图
                 func_graph =  nx.MultiDiGraph()
-
+                
                 for node in function.nodes:
 
                     # 存数使用到的局部变量
@@ -174,10 +174,10 @@ def get_full_cfg_graph(vulnerabilities_info):
                 function_node_token = '_'.join([str(sol_file_name),
                                                 str(contract.name),
                                                 str(function.full_name)])
-                # print(function_node_token)
+                
                 function_node_code_lines = function.source_mapping.lines
                 function_node_vuln_info = get_vuln_of_node(function_node_code_lines, list_sol_file_vul_info)
-                func_graph.add_node(function.full_name,
+                func_graph.add_node(function_node_token,
                                     node_type='FUNCTION', 
                                     node_expression=None,
                                     node_token=function_node_token,
@@ -188,8 +188,8 @@ def get_full_cfg_graph(vulnerabilities_info):
                                     source_file=sol_file_name)
                 # 添加函数边
                 if 0 in func_graph.nodes():
-                    func_graph.add_edge(function.full_name, 0, edge_type='next')
-                
+                    func_graph.add_edge(function_node_token, 0, edge_type='next')
+                print(function_node_token)
                 # 合并图
                 func_graph = nx.relabel_nodes(func_graph,  \
                             lambda x: function.name + '_' + str(x), copy=False)
@@ -235,7 +235,7 @@ def get_vuln_cfg_graph(vuln_dataset_dir, isSave=False):
     with open(vuln_json_path, 'r') as f:
         vulnerabilities_info = list(json.load(f))
     bug_full_graph = get_full_cfg_graph(vulnerabilities_info)
-    ##########################################
+    # ##########################################
     # from utils import check_null
     # if not check_null(bug_full_graph):
     #     print('有空结点')
@@ -271,7 +271,7 @@ def get_node_info(node, list_sol_file_vul_info):
 if __name__ == "__main__":
 
     dataset_root = f'{root_dir}/integrate_dataset'
-    isSave = True
+    isSave = False
     # 获取全部漏洞类型
     # all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
     all_vuln_type = ['other']

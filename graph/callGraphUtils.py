@@ -35,7 +35,7 @@ class GESCPrinters(AbstractPrinter):
         all_functions_as_dict = {
             function.canonical_name: function for function in all_functions
         }
-        # print(len(all_functions))
+        # print(type(all_functions[0]))
         call_graph = _process_functions(all_functions_as_dict.values(), 
                                         filename, 
                                         vulnerabilities_in_sc)
