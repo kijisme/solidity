@@ -44,7 +44,7 @@ if __name__ == "__main__":
     error_all = []
     for vuln in vuln_all:
         if vuln != 'clean':
-            json_path = os.path.join(dataset_dir, vuln, 'integrate/vulnerabilities.json')
+            json_path = os.path.join(dataset_dir, vuln, 'integrate/vuln_vulnerabilities.json')
             all_error = test_all_contract(json_path)
             error_all.append(all_error)
         else:

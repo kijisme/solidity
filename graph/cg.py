@@ -62,10 +62,10 @@ def get_vuln_call_graph(vuln_dataset_dir, isSave=False):
 if __name__ == "__main__":
 
     dataset_root = f'{root_dir}/integrate_dataset'
-    isSave = True
+    isSave = False
     # 获取全部漏洞类型
-    all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
-    # all_vuln_type = ['other']
+    # all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
+    all_vuln_type = ['other']
     # print(all_vuln_type)
     # 对每一种漏洞类型进行处理
     for vuln_type in all_vuln_type:

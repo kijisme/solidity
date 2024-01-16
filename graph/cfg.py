@@ -44,9 +44,9 @@ def get_full_cfg_graph(vulnerabilities_info):
             # 添加状态变量节点
             for state_var in contract.state_variables:
                 node_token = '_'.join(['STATE_VAR', str(state_var)])
-                node_code_lines = None
+                node_code_lines = state_var.source_mapping.lines
                 node_vuln_info = get_vuln_of_node(node_code_lines, list_sol_file_vul_info)
-                contract_graph.add_node(str(state_var),
+                contract_graph.add_node(str(contract.name) + '_' + str(state_var),
                                         node_type='STATE_VAR', 
                                         node_expression=str(state_var),
                                         node_token=node_token,
@@ -55,11 +55,10 @@ def get_full_cfg_graph(vulnerabilities_info):
                                         function_fullname=None,
                                         contract_name=contract.name, 
                                         source_file=sol_file_name)
-                # print(str(state_var))
                 
             for function in contract.functions + contract.modifiers:
-                if len(function.nodes) == 0:
-                    continue
+                # if len(function.nodes) == 0:
+                #     continue
                 # 存储函数状态变量使用情况
                 state_var_use = {}
                 # 局部变量字典
@@ -175,6 +174,7 @@ def get_full_cfg_graph(vulnerabilities_info):
                 function_node_token = '_'.join([str(sol_file_name),
                                                 str(contract.name),
                                                 str(function.full_name)])
+                # print(function_node_token)
                 function_node_code_lines = function.source_mapping.lines
                 function_node_vuln_info = get_vuln_of_node(function_node_code_lines, list_sol_file_vul_info)
                 func_graph.add_node(function.full_name,
@@ -194,29 +194,13 @@ def get_full_cfg_graph(vulnerabilities_info):
                 func_graph = nx.relabel_nodes(func_graph,  \
                             lambda x: function.name + '_' + str(x), copy=False)
                 
-                ############################################
-                # from utils import check_null, have_same
-                # if not check_null(func_graph):            #检查是否有空点
-                    # print('空点')
-                # if have_same(func_graph, contract_graph):  #检查是否有相同节点
-                #     print('有相同节点')
-                #############################################
-                
-                ############################################
-                # print(len(contract_graph.nodes()), len(func_graph.nodes()), len(contract.state_variables))
-                if func_graph is None:
-                    continue
-                print(contract_graph.nodes())
                 contract_graph = nx.compose(contract_graph, func_graph)
-                print(contract_graph.nodes())
-                from utils import check_null
-                if not check_null(contract_graph):            #检查是否有空点
-                    print('空点')
-                #############################################
+               
                 # 添加全局数据边
                 for state_var in state_var_use:
+                    declare_contract = state_var.contract
                     for node_id in state_var_use[state_var]:
-                        contract_graph.add_edge(str(state_var),
+                        contract_graph.add_edge(str(declare_contract)+ '_' +str(state_var),
                                                 function.name + '_' + str(node_id),
                                                 edge_type='use')
             
@@ -225,12 +209,17 @@ def get_full_cfg_graph(vulnerabilities_info):
             if sol_file_graph is None:
                 sol_file_graph = deepcopy(contract_graph)
             elif sol_file_graph is not None:
-                sol_file_graph = nx.disjoint_union(sol_file_graph, contract_graph)
+                sol_file_graph = nx.compose(sol_file_graph, contract_graph)
+                # sol_file_graph = nx.disjoint_union(sol_file_graph, contract_graph)
             
-        # if sol_file_graph is None:
-        #     # 记录错误文件
+        ##########################################
+        # from utils import check_null
+        # if not check_null(sol_file_graph):
+        #     print('有空结点')
+        # else:
+        #     print('无空节点')
+        ##########################################
 
-        #     continue
         if bug_full_graph is None:
             bug_full_graph = deepcopy(sol_file_graph)
         elif bug_full_graph is not None:
@@ -242,11 +231,17 @@ def get_full_cfg_graph(vulnerabilities_info):
 '''获取单种漏洞图'''
 def get_vuln_cfg_graph(vuln_dataset_dir, isSave=False):
 
-    vuln_json_path = os.path.join(vuln_dataset_dir, 'clean_vulnerabilities.json')
+    vuln_json_path = os.path.join(vuln_dataset_dir, 'vulnerabilities.json')
     with open(vuln_json_path, 'r') as f:
         vulnerabilities_info = list(json.load(f))
     bug_full_graph = get_full_cfg_graph(vulnerabilities_info)
-
+    ##########################################
+    # from utils import check_null
+    # if not check_null(bug_full_graph):
+    #     print('有空结点')
+    # else:
+    #     print('无空结点')
+    ##########################################
     if isSave:
         # 保存图
         nx.write_gpickle(bug_full_graph, os.path.join(vuln_dataset_dir, 'cfg.gpickle'))
@@ -276,7 +271,7 @@ def get_node_info(node, list_sol_file_vul_info):
 if __name__ == "__main__":
 
     dataset_root = f'{root_dir}/integrate_dataset'
-    isSave = False
+    isSave = True
     # 获取全部漏洞类型
     # all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
     all_vuln_type = ['other']

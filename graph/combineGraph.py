@@ -14,7 +14,7 @@ def mapping_cfg_and_cg_node_token(cfg, call_graph):
         if node_data['node_type'] == 'FUNCTION':
             if node_data['node_token'] not in dict_node_token_cfg_and_cg:
                 dict_node_token_cfg_and_cg[node_data['node_token']] = None
-       
+                print(node_data['node_token'])
             dict_node_token_cfg_and_cg[node_data['node_token']] = {
                 'cfg_node_id': node,
                 'cfg_node_type': node_data['node_type']
