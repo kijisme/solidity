@@ -69,9 +69,9 @@ def update_cfg_node_types_by_call_graph_node_types(cfg, dict_node_label):
 if __name__ == "__main__":
 
     dataset_root = f'{root_dir}/integrate_dataset'
-    isSave = True
+    isSave = False
     # 获取全部漏洞类型
-    # all_vuln_type = [x for x in os.listdir(dataset_root)]
+    # all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
     all_vuln_type = ['other']
 
     # 对每一种漏洞进行处理
