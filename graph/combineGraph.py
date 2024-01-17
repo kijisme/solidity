@@ -11,6 +11,7 @@ def mapping_cfg_and_cg_node_token(cfg, call_graph):
 
     # 遍历cfg的函数节点,添加token信息(type只有FUNCTION)
     for node, node_data in cfg.nodes(data=True):
+        # 添加函数节点
         if node_data['node_type'] == 'FUNCTION':
             if node_data['node_token'] not in dict_node_token_cfg_and_cg:
                 dict_node_token_cfg_and_cg[node_data['node_token']] = None
@@ -18,7 +19,16 @@ def mapping_cfg_and_cg_node_token(cfg, call_graph):
                 'cfg_node_id': node,
                 'cfg_node_type': node_data['node_type']
             }
-    # 遍历cg的函数节点,添加token信息(type有fallback_function和contract_function)
+        # 添加状态变量节点
+        if node_data['node_type'] == 'STATEVARIABLE':
+            if node_data['node_token'] not in dict_node_token_cfg_and_cg:
+                dict_node_token_cfg_and_cg[node_data['node_token']] = None
+            dict_node_token_cfg_and_cg[node_data['node_token']] = {
+                'cfg_node_id': node,
+                'cfg_node_type': node_data['node_type']
+            }
+
+    # 遍历cg的函数节点,添加token信息(type有fallback_function\contract_function\state_variable)
     for node, node_data in call_graph.nodes(data=True):
         if node_data['node_token'] in dict_node_token_cfg_and_cg:
             dict_node_token_cfg_and_cg[node_data['node_token']]['call_graph_node_id'] = node
@@ -33,7 +43,6 @@ def mapping_cfg_and_cg_node_token(cfg, call_graph):
             dict_node_token_cfg_and_cg.pop(key, None)
 
     return dict_node_token_cfg_and_cg
-
 
 '''根据cg对cfg添加call边'''
 def add_new_cfg_edges_from_call_graph(cfg, dict_node_label, call_graph):

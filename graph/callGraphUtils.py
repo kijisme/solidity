@@ -260,7 +260,6 @@ def _process_external_call(
 
     # add variable as node to respective contract
     if isinstance(external_function, (Variable)):
-        print(type(external_function))
         contract_functions[external_contract].add(tuple(
                 _function_node(external_contract, external_function, filename_input, tuple_vulnerabilities_in_sc).items()))
 
@@ -336,7 +335,7 @@ def get_node_info(tuple_node):
     elif '[Solidity]' in node_id:
         node_type = 'fallback_function'
     elif '[Variable]' in node_id:
-        node_type = 'Variable'
+        node_type = 'external_variable'
     else:
         node_type = 'contract_function'
 

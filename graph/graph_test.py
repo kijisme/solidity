@@ -73,4 +73,9 @@ if __name__ == "__main__":
     dataset_root = '/workspaces/solidity/integrate_dataset'
     graph_path_dir = get_graph_dir(dataset_root)
     check_all_graph(graph_path_dir)
-    # check_function_in_graph(graph_path_dir)
+    check_function_in_graph(graph_path_dir)
+
+    # path = '/workspaces/solidity/integrate_dataset/other/integrate/cfg.gpickle'
+    # graph = nx.read_gpickle(path)
+    # if not check_null(graph):
+    #     print('有空结点')
