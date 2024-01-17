@@ -48,7 +48,7 @@ def get_full_cfg_graph(vulnerabilities_info):
                 
                 node_code_lines = state_var.source_mapping.lines
                 node_vuln_info = get_vuln_of_node(node_code_lines, list_sol_file_vul_info)
-                contract_graph.add_node(state_var.full_name,
+                contract_graph.add_node(f'{contract.name}_{state_var.full_name}',
                                         node_type='STATEVARIABLE', 
                                         node_expression=state_var.name,
                                         node_token=node_token,
@@ -60,8 +60,11 @@ def get_full_cfg_graph(vulnerabilities_info):
                
             for function in contract.functions + contract.modifiers:
                 
-                if not check_inheriate(function, contract.name):
-                    continue
+                if function.contract_declarer.name != contract.name:
+                    # 继承的私有函数不属于当前合约
+                    if function.visibility == 'private' or function.visibility == 'external':
+                        continue
+
                 # 存储函数状态变量使用情况
                 state_var_use = {}
                 # 局部变量字典
@@ -175,7 +178,7 @@ def get_full_cfg_graph(vulnerabilities_info):
                 if len(func_graph.nodes) != 0:
                     # 添加函数名称
                     func_graph = nx.relabel_nodes(func_graph,  \
-                                lambda x: function.full_name + '_' + str(x), copy=False)
+                                lambda x: f'{contract.name}_{function.full_name}_{str(x)}', copy=False)
 
                 # 添加函数节点
                 function_node_token = '_'.join([str(sol_file_name),
@@ -194,18 +197,25 @@ def get_full_cfg_graph(vulnerabilities_info):
                                     contract_name=contract.name, 
                                     source_file=sol_file_name)
                 # 添加函数边
-                if f'{function.full_name}_0' in func_graph.nodes():
-                    func_graph.add_edge(function.full_name, f'{function.full_name}_0', edge_type='next')
+                if f'{contract.name}_{function.full_name}_0' in func_graph.nodes():
+                    func_graph.add_edge(function.full_name, f'{contract.name}_{function.full_name}_0', edge_type='next')
                 
                 # 合并图
                 contract_graph = nx.compose(contract_graph, func_graph)
                
                 # 添加全局数据边
                 for state_var in state_var_use:
-                    for node_id in state_var_use[state_var]:
-                        contract_graph.add_edge(state_var.full_name,
-                                                f'{function.full_name}_{str(node_id)}',
-                                                edge_type='use')
+                    if (state_var in contract.state_variables) or state_var.visibility != 'private':
+                        for node_id in state_var_use[state_var]:
+                            contract_graph.add_edge(f'{contract.name}_{state_var.full_name}',
+                                                    f'{contract.name}_{function.full_name}_{str(node_id)}',
+                                                    edge_type='use')
+                    else:
+                        for node_id in state_var_use[state_var]:
+                            contract_graph.add_edge(f'{function.contract_declarer.name}_{state_var.full_name}',
+                                                    f'{contract.name}_{function.full_name}_{str(node_id)}',
+                                                    edge_type='use')
+
                 ##########################################
                 # from utils import check_null
                 # if not check_null(contract_graph):
@@ -218,8 +228,8 @@ def get_full_cfg_graph(vulnerabilities_info):
             if sol_file_graph is None:
                 sol_file_graph = deepcopy(contract_graph)
             elif sol_file_graph is not None:
-                # sol_file_graph = nx.compose(sol_file_graph, contract_graph)
-                sol_file_graph = nx.disjoint_union(sol_file_graph, contract_graph)
+                sol_file_graph = nx.compose(sol_file_graph, contract_graph)
+                # sol_file_graph = nx.disjoint_union(sol_file_graph, contract_graph)
             
         ##########################################
         # from utils import check_null
@@ -293,8 +303,8 @@ if __name__ == "__main__":
     dataset_root = f'{root_dir}/integrate_dataset'
     isSave = True
     # 获取全部漏洞类型
-    all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
-    # all_vuln_type = ['arithmetic']
+    # all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
+    all_vuln_type = ['bad_randomness']
 
     # 对每一种漏洞类型进行处理
     for vuln_type in all_vuln_type:

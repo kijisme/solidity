@@ -8,9 +8,9 @@ def check_null(graph):
     edges = set()
     for source, target, edge_data in graph.edges(data=True):
         if source in nodes:
-            edges.add(f'{source}_{graph.nodes(data=False)[target]}')
+            edges.add(f'{edge_data}_{source}_{graph.nodes(data=False)[target]}')
         if target in nodes:
-            edges.add(f'{target}_{graph.nodes(data=False)[source]}')
+            edges.add(f'{edge_data}_{target}_{graph.nodes(data=False)[source]}')
     for edge in edges:
         print(edge)
     
