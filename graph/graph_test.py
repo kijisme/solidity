@@ -1,4 +1,5 @@
 import os
+import json
 import networkx as nx
 
 '''检查是否有空结点'''
@@ -29,6 +30,7 @@ def get_function_dir(graph):
 def compare_function(cg_dir, cfg_dir):
     
     flag = True
+    error_file = set()
     if cg_dir.keys() != cfg_dir.keys():
         print('文件未解析完全')
         return False
@@ -36,17 +38,23 @@ def compare_function(cg_dir, cfg_dir):
         for function in cg_dir[file]:
             if function not in cfg_dir[file]:
                 print(function)
+                error_file.add(function.split('.sol')[0])
                 flag = False
-    return flag
+    return flag, list(error_file)
         
 
 def check_function_in_graph(graph_path_dir):
+    all_error = {}
     for vuln in graph_path_dir:
         cg = nx.read_gpickle(graph_path_dir[vuln]['cg'])
         cfg = nx.read_gpickle(graph_path_dir[vuln]['cfg'])
         cg_dir = get_function_dir(cg)
         cfg_dir = get_function_dir(cfg)
-        if not compare_function(cg_dir, cfg_dir):
+        flag, error = compare_function(cg_dir, cfg_dir)
+        if not flag:
+            all_error['vuln'] = error
+            with open(f'/workspaces/solidity/error/{vuln}_error.json', 'w') as f:
+                json.dump(all_error, f)
             print(f'{vuln}有问题')
 
 def get_graph_dir(dataset_root):
@@ -65,4 +73,4 @@ if __name__ == "__main__":
     dataset_root = '/workspaces/solidity/integrate_dataset'
     graph_path_dir = get_graph_dir(dataset_root)
     check_all_graph(graph_path_dir)
-    check_function_in_graph(graph_path_dir)
+    # check_function_in_graph(graph_path_dir)

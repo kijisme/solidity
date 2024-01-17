@@ -43,12 +43,15 @@ def get_full_cfg_graph(vulnerabilities_info):
             contract_graph = nx.MultiDiGraph()
             # 添加状态变量节点
             for state_var in contract.state_variables:
-                node_token = '_'.join(['STATE_VAR', str(state_var)])
+                node_token = '_'.join([str(sol_file_name),
+                                       str(contract.name),
+                                       str(state_var.full_name)])
+                
                 node_code_lines = state_var.source_mapping.lines
                 node_vuln_info = get_vuln_of_node(node_code_lines, list_sol_file_vul_info)
-                contract_graph.add_node(str(contract.name) + '_' + str(state_var),
-                                        node_type='STATE_VAR', 
-                                        node_expression=str(state_var),
+                contract_graph.add_node(node_token,
+                                        node_type='STATEVARIABLE', 
+                                        node_expression=str(state_var.full_name),
                                         node_token=node_token,
                                         node_code_lines=node_code_lines,
                                         node_vuln_info=node_vuln_info,
@@ -169,7 +172,10 @@ def get_full_cfg_graph(vulnerabilities_info):
                                                 node.node_id,
                                                 edge_type='use')
                     
-                    
+                # 添加函数名称
+                func_graph = nx.relabel_nodes(func_graph,  \
+                            lambda x: contract.name + function.name + '_' + str(x), copy=False)
+
                 # 添加函数节点
                 function_node_token = '_'.join([str(sol_file_name),
                                                 str(contract.name),
@@ -188,20 +194,20 @@ def get_full_cfg_graph(vulnerabilities_info):
                                     source_file=sol_file_name)
                 # 添加函数边
                 if 0 in func_graph.nodes():
-                    func_graph.add_edge(function_node_token, 0, edge_type='next')
-                print(function_node_token)
-                # 合并图
-                func_graph = nx.relabel_nodes(func_graph,  \
-                            lambda x: function.name + '_' + str(x), copy=False)
+                    func_graph.add_edge(function_node_token, f'{contract.name}_{function.name}_0', edge_type='next')
                 
+                # 合并图
                 contract_graph = nx.compose(contract_graph, func_graph)
                
                 # 添加全局数据边
                 for state_var in state_var_use:
-                    declare_contract = state_var.contract
+                    state_node_token = '_'.join([str(sol_file_name),
+                                           str(state_var.contract.name),
+                                           str(state_var.full_name)])
+                    # declare_contract = state_var.contract
                     for node_id in state_var_use[state_var]:
-                        contract_graph.add_edge(str(declare_contract)+ '_' +str(state_var),
-                                                function.name + '_' + str(node_id),
+                        contract_graph.add_edge(state_node_token,
+                                                contract.name + function.name + '_' + str(node_id),
                                                 edge_type='use')
             
             if contract_graph is None:
@@ -271,10 +277,10 @@ def get_node_info(node, list_sol_file_vul_info):
 if __name__ == "__main__":
 
     dataset_root = f'{root_dir}/integrate_dataset'
-    isSave = False
+    isSave = True
     # 获取全部漏洞类型
-    # all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
-    all_vuln_type = ['other']
+    all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
+    # all_vuln_type = ['bad_randomness']
 
     # 对每一种漏洞类型进行处理
     for vuln_type in all_vuln_type:

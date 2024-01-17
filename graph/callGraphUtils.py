@@ -155,6 +155,8 @@ def parse_vulnerabilities_in_sc_to_tuple(vulnerabilities_in_sc):
 '''获取函数节点的唯一表示'''
 def _function_node(contract, function, filename, tuple_vulnerabilities_in_sc):
     
+    # 节点编号
+    node_id = f"{filename}_{contract.id}_{contract.name}_{function.full_name}"
     # 函数在文件的位置
     node_function_source_code_lines = function.source_mapping.lines
     # 获取文件漏洞信息
@@ -162,7 +164,10 @@ def _function_node(contract, function, filename, tuple_vulnerabilities_in_sc):
     # 获取节点漏洞信息
     node_function_info_vulnerabilities = get_vuln_of_node(node_function_source_code_lines, vulnerabilities_in_sc)
 
-    node_info = {'node_id':f"{filename}_{contract.id}_{contract.name}_{function.full_name}",
+    if isinstance(function, (Variable)):
+        node_id = "[Variable]" + "_" + node_id
+
+    node_info = {'node_id':node_id,
                  'node_token':f'{filename}_{contract.name}_{function.full_name}',
                  'node_code_lines':tuple(node_function_source_code_lines),
                  'node_vuln_info':parse_vulnerabilities_in_sc_to_tuple(node_function_info_vulnerabilities),
@@ -255,6 +260,7 @@ def _process_external_call(
 
     # add variable as node to respective contract
     if isinstance(external_function, (Variable)):
+        print(type(external_function))
         contract_functions[external_contract].add(tuple(
                 _function_node(external_contract, external_function, filename_input, tuple_vulnerabilities_in_sc).items()))
 
@@ -329,6 +335,8 @@ def get_node_info(tuple_node):
         node_type = 'fallback_function'
     elif '[Solidity]' in node_id:
         node_type = 'fallback_function'
+    elif '[Variable]' in node_id:
+        node_type = 'Variable'
     else:
         node_type = 'contract_function'
 
