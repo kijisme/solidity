@@ -3,12 +3,12 @@
 generate_compress_graph(){
     
     echo '生成cfg'   
-    python ./graph/cfg.py --isSave --vuln_type=${1}
+    python ./graph/cfg.py --isSave
     echo '生成cg'   
-    python ./graph/cg.py --isSave --vuln_type=${1}
+    python ./graph/cg.py --isSave
     echo '生成compress graph'   
-    python ./graph/combineGraph.py --isSave --vuln_type=${1}
+    python ./graph/combineGraph.py --isSave
 }
 
-vuln="front_running"
-generate_compress_graph ${vuln}
+# vuln="access_control"
+generate_compress_graph 

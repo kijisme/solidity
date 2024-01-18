@@ -81,15 +81,15 @@ if __name__ == "__main__":
     dataset_root = f'{root_dir}/integrate_dataset'
     parser = argparse.ArgumentParser()
     parser.add_argument('--isSave', action='store_true', help='是否保存生成图')
-    parser.add_argument('--vuln_type', default='other', type=str, help='检测漏洞类型')
+    # parser.add_argument('--vuln_type', default='other', type=str, help='检测漏洞类型')
     args = parser.parse_args()
 
     isSave = args.isSave
 
     # 获取全部漏洞类型
-    # all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
-    all_vuln_type = [args.vuln_type]
-
+    all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
+    # all_vuln_type = [args.vuln_type]
+    # all_vuln_type = ['unchecked_low_level_calls']
     # 对每一种漏洞进行处理
     for vuln_type in all_vuln_type:
         # 获取两种图和合并图的存储路径

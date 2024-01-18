@@ -62,7 +62,7 @@ def get_full_cfg_graph(vulnerabilities_info):
                 
                 if function.contract_declarer.name != contract.name:
                     # 继承的私有函数不属于当前合约
-                    if function.visibility == 'private' or function.visibility == 'external':
+                    if function.visibility == 'private':
                         continue
 
                 # 存储函数状态变量使用情况
@@ -304,14 +304,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--isSave', action='store_true', help='是否保存生成图')
-    parser.add_argument('--vuln_type', default='other', type=str, help='检测漏洞类型')
+    # parser.add_argument('--vuln_type', default='other', type=str, help='检测漏洞类型')
     args = parser.parse_args()
 
     isSave = args.isSave
     # 获取全部漏洞类型
-    # all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
-    all_vuln_type = [args.vuln_type]
-
+    all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
+    # all_vuln_type = [args.vuln_type]
+    # all_vuln_type = ['unchecked_low_level_calls']
     # 对每一种漏洞类型进行处理
     for vuln_type in all_vuln_type:
         vuln_dataset_dir = os.path.join(dataset_root, vuln_type, 'integrate')
