@@ -12,7 +12,10 @@ def collect_clean_dataset(dataset_dir, vuln_all_dir, ratio):
     for vuln in vuln_all_dir:
         target_path = os.path.join(dataset_dir, vuln, 'integrate', 'clean_vulnerabilities.json')
         vuln_item_num = vuln_all_dir[vuln]
-        clean_choose = random.choices(np.arange(len_clean), k=vuln_item_num*ratio)
+        # np.random.choice(a=np.arange(5), size=5, replace=False, p=None)
+        # clean_choose = random.choices(np.arange(len_clean), k=vuln_item_num*ratio)
+        clean_choose = np.random.choice(a=np.arange(len_clean), size=vuln_item_num*ratio, replace=False, p=None)
+        # print(clean_choose)
         clean_choose_items = []
         for index in clean_choose:
             clean_choose_items.append(clean_items[index])
