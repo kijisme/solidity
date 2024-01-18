@@ -29,12 +29,15 @@ slither将继承的外部函数加入到当前合约中,将继承获得的节点
 
 # 对于图合并:
 func_graph -> contract_graph      
----func_graph的id可能存在重复,relabel:f'{function.full_name}_id',后合并为contract_graph
----使用nx.compose(),避免状态变量重复,便于后续添加内部状态变量数据边
+---需要考虑状态变量，不同函数需要访问统一状态变量，**函数间不独立**
+---func_graph的id可能存在重复,relabel:f'{function.full_name}_id'使用nx.compose(),
 ---添加内部状态变量数据边,(f'{function.name}_id', 状态变量名称)
 contract_graph -> sol_file_graph
----使用nx.disjoint_union()
+---合约继承关系，文件内存在不同合约具有相同函数，故：id：合约名称\函数名称|状态变量名称
+---合约继承时，对于使用public继承函数去访问父合约private合约状态变量的情况，合约函数中语句与另一合约状态变量的使用关系，**合约间不独立**
+---使用nx.compose(),避免重复的跨合约状态变量
 sol_file_graph -> bug_graph
+---一个.sol为一个编译单元，**文件间独立**
 ---使用nx.disjoint_union()
 
 # 对于节点id & token信息
@@ -45,7 +48,7 @@ sol_file_graph -> bug_graph
 控制流节点:函数内唯一,合约内部,文件内部和文件间可能存在重复,在cfg基础上处理
 ----token:node_type\node_expression
 
-
+# token
 [状态变量]:
 str(sol_file_name)
 str(contract.name),

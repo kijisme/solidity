@@ -65,7 +65,7 @@ if __name__ == "__main__":
     isSave = True
     # 获取全部漏洞类型
     # all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
-    all_vuln_type = ['bad_randomness']
+    all_vuln_type = ['other']
     # print(all_vuln_type)
     # 对每一种漏洞类型进行处理
     for vuln_type in all_vuln_type:

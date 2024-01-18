@@ -1,7 +1,7 @@
 # 构建全局异构图
 import os
 import json
-from tqdm import tqdm
+import argparse	
 import subprocess
 import networkx as nx
 from copy import deepcopy
@@ -187,7 +187,7 @@ def get_full_cfg_graph(vulnerabilities_info):
                 
                 function_node_code_lines = function.source_mapping.lines
                 function_node_vuln_info = get_vuln_of_node(function_node_code_lines, list_sol_file_vul_info)
-                func_graph.add_node(function.full_name,
+                func_graph.add_node(f'{contract.name}_{function.full_name}',
                                     node_type='FUNCTION',
                                     node_expression=None,
                                     node_token=function_node_token,
@@ -198,7 +198,7 @@ def get_full_cfg_graph(vulnerabilities_info):
                                     source_file=sol_file_name)
                 # 添加函数边
                 if f'{contract.name}_{function.full_name}_0' in func_graph.nodes():
-                    func_graph.add_edge(function.full_name, f'{contract.name}_{function.full_name}_0', edge_type='next')
+                    func_graph.add_edge(f'{contract.name}_{function.full_name}', f'{contract.name}_{function.full_name}_0', edge_type='next')
                 
                 # 合并图
                 contract_graph = nx.compose(contract_graph, func_graph)
@@ -301,10 +301,11 @@ def check_inheriate(function, contract_name):
 if __name__ == "__main__":
 
     dataset_root = f'{root_dir}/integrate_dataset'
+    parser = argparse.ArgumentParser()
     isSave = True
     # 获取全部漏洞类型
     # all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
-    all_vuln_type = ['bad_randomness']
+    all_vuln_type = ['other']
 
     # 对每一种漏洞类型进行处理
     for vuln_type in all_vuln_type:
