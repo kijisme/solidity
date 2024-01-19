@@ -1,33 +1,32 @@
-import 
-class EthIdsDataset(DGLDataset):
-    def __init__(self, label, raw_dir=None, force_reload=True, verbose=False):
-        # self._data_path = data_path
-        self._label = label
-        super(EthIdsDataset, self).__init__(name='ethscids',
-                                            raw_dir=raw_dir,
-                                            force_reload=force_reload,
-                                            verbose=verbose)
 
+import json
+
+import torch
+
+import dgl
+from dgl.data import DGLDataset
+
+class contractVulnDataset(DGLDataset):
+    def __init__(self, label_json_path, raw_dir=None, force_reload=True, verbose=False):
+        super().__init__(name='contractVuln',raw_dir=raw_dir,force_reload=force_reload,verbose=verbose)
+        
+        self.label_json_path = label_json_path
+        # 自动执行 self.process()
+        
     def process(self):
-        # Get labels
-        with open(self._label, 'r') as f:
-            self._annotations = json.load(f)
-        # self.label_dict = {}
-        # for sc in annotations:
-        #     self.label_dict[sc['contract_name']] = sc['targets']
-         # Get source names
-        # self.extracted_graph = [f for f in os.listdir(self._data_path) if f.endswith('.sol')]
-        self.num_graphs = len(self._annotations)
-        self.graphs, self.label = self._load_graph()
-        # Get filename ids
-        # self.filename_mapping = {file: idx for idx, file in enumerate(self.extracted_graph)}
-
-    def _load_graph(self):
+        # 获取全部label信息
+        with open(self.label_json_path, 'r') as f:
+            _annotations = json.load(f)
+        # 获取全部图和label
+        self.graphs, self.label = self._load_graph(_annotations)
+        
+    def _load_graph(self, _annotations):
         graphs = []
         labels = []
-        for contract in self._annotations:
+        for contract in _annotations:
             graphs.append(contract['contract_name'])
             labels.append(int(contract['targets']))
+
         labels = torch.tensor(labels, dtype=torch.int64)
         return graphs, labels
 
