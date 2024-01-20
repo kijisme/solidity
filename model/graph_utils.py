@@ -96,6 +96,7 @@ def reflect_graph(nx_g_data):
                 symmetrical_data[metapath[::-1]] = (torch.cat((symmetrical_data[metapath[::-1]][0], value[1])), torch.cat((symmetrical_data[metapath[::-1]][1], value[0])))
     return symmetrical_data
 
+# 获取每种类型节点的数目
 def get_number_of_nodes(nx_graph):
     nx_g = nx_graph
     number_of_nodes = {}
@@ -135,3 +136,16 @@ def get_length_2_metapath(symmetrical_global_graph):
                     metapath_list.append(second_metapath)
 
     return metapath_list
+
+def get_node_expression(nx_graph):
+    nx_g = nx_graph
+    node_expressions = {}
+    for node, node_data in nx_g.nodes(data=True):
+        node_type = node_data['node_type']
+        node_expression = node_data['node_expression']
+        if node_type not in node_expressions.keys():
+            node_expressions[node_type] = [node_expression]
+        else:
+            node_expressions[node_type].append(node_expression)
+    
+    return node_expressions

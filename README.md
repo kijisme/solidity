@@ -30,6 +30,16 @@ dataset_collect.py 为每种漏洞选择clean,数据合并json
 --feature_extractor ./experiments/ge-sc-data/source_code/gesc_matrices_node_embedding/matrix_node2vec_dim128_of_core_graph_of_access_control_cfg_cg_clean_57_0.pkl 
 --seed 1
 
+节点属性特征没有考虑:
+id,
+√ node_type,
+√ node_expression,
+× node_token,
+× node_code_lines, 占位
+× node_vuln_info,
+ function_fullname,
+× contract_name, 
+× source_file
 
 
 

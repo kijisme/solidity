@@ -50,7 +50,7 @@ def get_full_cfg_graph(vulnerabilities_info):
                 node_vuln_info = get_vuln_of_node(node_code_lines, list_sol_file_vul_info)
                 contract_graph.add_node(f'{contract.name}_{state_var.full_name}',
                                         node_type='STATEVARIABLE', 
-                                        node_expression=state_var.name,
+                                        node_expression=state_var.full_name,
                                         node_token=node_token,
                                         node_code_lines=node_code_lines,
                                         node_vuln_info=node_vuln_info,
@@ -189,7 +189,7 @@ def get_full_cfg_graph(vulnerabilities_info):
                 function_node_vuln_info = get_vuln_of_node(function_node_code_lines, list_sol_file_vul_info)
                 func_graph.add_node(f'{contract.name}_{function.full_name}',
                                     node_type='FUNCTION',
-                                    node_expression=None,
+                                    node_expression=function.full_name,
                                     node_token=function_node_token,
                                     node_code_lines=function_node_code_lines,
                                     node_vuln_info=function_node_vuln_info,
@@ -276,7 +276,7 @@ def get_node_info(node, list_sol_file_vul_info):
         if node.variable_declaration:
             node_expression = str(node.variable_declaration)
         else:
-            node_expression = None
+            node_expression = f'[{node_type}]'
 
     node_token = "_".join([node_type, str(node_expression)])
 

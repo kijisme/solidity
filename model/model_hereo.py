@@ -8,9 +8,9 @@ import dgl
 from dgl.nn.pytorch import GATConv
 
 
-from .graph_utils import load_hetero_nx_graph, generate_hetero_graph_data, \
+from graph_utils import load_hetero_nx_graph, generate_hetero_graph_data, \
         get_number_of_nodes, get_node_tracker, reflect_graph, \
-        get_length_2_metapath, generate_filename_ids
+        get_length_2_metapath, generate_filename_ids, get_node_expression
 
 class SemanticAttention(nn.Module):
     def __init__(self, input_size, hidden_size=128):
@@ -84,7 +84,7 @@ class HANLayer(nn.Module):
         return self.semantic_attention(semantic_embeddings)                            
 
 class MANDOGraphClassifier(nn.Module):
-    def __init__(self, compressed_global_graph_path, feature_extractor=None, node_feature='nodetype', 
+    def __init__(self, compressed_global_graph_path, vocablen=None, embedding_dim=128, node_feature='nodetype', 
                  hidden_size=32, out_size=2, num_heads=8, dropout=0.6, device='cpu'):
         super(MANDOGraphClassifier, self).__init__()
         
@@ -94,11 +94,11 @@ class MANDOGraphClassifier(nn.Module):
         self.device = device
         
         # 获取全局图
-        # 读取图文件\转化label为数字\添加'node_hetero_id'节点索引(通节点类型的第几个)
+        # 读取图文件\转化label为数字\添加'node_hetero_id'节点索引(同节点类型的第几个)
         nx_graph = load_hetero_nx_graph(self.compressed_global_graph_path)
         # 获取图的三元组 (source_type, edge_type, target_type) -> ([all_source],[all_target])
         nx_g_data = generate_hetero_graph_data(nx_graph)
-        # 获取文件索引 source_file_name -> id
+        # 获取文件索引 source_file_name -> id(文件名称全部编码)
         self.filename_mapping = generate_filename_ids(nx_graph)
         # 获取每个类型节点涉及的文件id node_type -> [id]
         _node_tracker = get_node_tracker(nx_graph, self.filename_mapping)
@@ -108,16 +108,15 @@ class MANDOGraphClassifier(nn.Module):
         self.symmetrical_global_graph_data = reflect_graph(nx_g_data)
         # 获取每种类型节点的数量
         self.number_of_nodes = get_number_of_nodes(nx_graph)
-        # 构图
+        # 构图(仅考虑连接关系)
         self.symmetrical_global_graph = dgl.heterograph(self.symmetrical_global_graph_data, num_nodes_dict=self.number_of_nodes)
-        # 添加所属文件索引 'filename'
+        # 添加所属文件索引 'filename'(节点类型->具有该类型节点[file_id])
         self.symmetrical_global_graph.ndata['filename'] = _node_tracker
-       
+
         # 获取元路径
         self.length_2_meta_paths = get_length_2_metapath(self.symmetrical_global_graph)
         self.meta_paths = self.length_2_meta_paths
 
-        # Concat the metapaths have the same begin nodetype
         # 合并具有相同起始节点类型的元路径 {ntype}:{[metapath_list]}}
         self.full_metapath = {}
         for metapath in self.meta_paths:
@@ -136,7 +135,7 @@ class MANDOGraphClassifier(nn.Module):
 
         # 获取节点特征 {node_type} : {feature} 
         # feature : [node_num, in_size]
-        features = self.get_node_feature(node_feature, feature_extractor, nx_graph)
+        features = self.get_node_feature(node_feature)
         
         # 加载图到机器
         self.symmetrical_global_graph = self.symmetrical_global_graph.to(self.device)
@@ -151,32 +150,15 @@ class MANDOGraphClassifier(nn.Module):
         # 初始化分类器MLP
         self.classify = nn.Linear(hidden_size * num_heads , out_size)
 
-    def get_node_feature(self, node_feature, feature_extractor, nx_graph):
+    def get_node_feature(self, node_feature):
 
         features = {}
         if node_feature == 'nodetype':
-            # onehot编码
+            # onehot编码(不考虑属性信息)
+            # features node_type -> [num_node, in_size]
             for ntype in self.symmetrical_global_graph.ntypes:
                 features[ntype] = self._nodetype2onehot(ntype).repeat(self.symmetrical_global_graph.num_nodes(ntype), 1).to(self.device)
             self.in_size = len(self.node_types)
-        elif node_feature == 'metapath2vec':
-            embedding_dim = 128
-            self.in_size = embedding_dim
-            for metapath in self.meta_paths:
-                # PYG
-                _metapath_embedding = MetaPath2Vec(self.symmetrical_global_graph_data, 
-                                                   embedding_dim=embedding_dim,
-                                                   metapath=metapath, walk_length=50, context_size=7,
-                                                   walks_per_node=5, num_negative_samples=5, 
-                                                   num_nodes_dict=self.number_of_nodes,
-                                                   sparse=False)
-                ntype = metapath[0][0]
-                if ntype not in features.keys():
-                    features[ntype] = _metapath_embedding(ntype).unsqueeze(0)
-                else:
-                    features[ntype] = torch.cat((features[ntype], _metapath_embedding(ntype).unsqueeze(0)))
-            features = {k: torch.mean(v, dim=0).to(self.device) for k, v in features.items()}
-
         return features
 
     def _nodetype2onehot(self, ntype):
@@ -212,16 +194,21 @@ class MANDOGraphClassifier(nn.Module):
         for han in self.layers:
             # 获取当前HAN层的节点类型
             ntype = han.meta_paths[0][0][0]
+            # 对该类型节点expression进行词嵌入
             # feature [node_num, in_size] -> [node_num, out_size]
             feature = han(self.symmetrical_global_graph, self.symmetrical_global_graph.ndata['feat'][ntype])
+
             if ntype not in features.keys():
                 # features[ntype] [node_num, out_size] -> [meta_num, node_num, out_size]
                 features[ntype] = feature.unsqueeze(0)
             else:
                 features[ntype] = torch.cat((features[ntype], feature.unsqueeze(0)))
+            
+            # features ntype -> feature [meta_num, node_num, out_size] n为node_type出现在元路径中起始节点的次数
+            # mean(0) ntype -> feature [node_num, out_size]
+        for ntype in features.keys():
+            features[ntype] = features[ntype].mean(0)
         
-        # features ntype -> feature [meta_num, node_num, out_size] n为node_type出现在元路径中起始节点的次数
-
         batched_graph_embedded = []
         # 获取每一个文件的图嵌入
         for g_name in batched_g_name:
@@ -229,26 +216,42 @@ class MANDOGraphClassifier(nn.Module):
             file_ids = self.filename_mapping[g_name]
             graph_embedded = 0
             for node_type in self.node_types:
-                # 获取当前文件出现节点的mask
+                # 获取当前文件出现节点的mask [id]==file_id -> [isFile] ([0,0,1...])
                 file_mask = self.symmetrical_global_graph.ndata['filename'][node_type] == file_ids
+                
                 # 保证当前文件中有图中的节点
                 if file_mask.sum().item() != 0:
-                    # 全部元路径中该节点的特性 [meta_path_num ,node_num, out_size] 
-                    # 在第一维取平均 [meta_path_num ,node_num, out_size]->[node_num, out_size]
+                    # 元路径中该类型节点的全部特性 features[node_type] [node_num, out_size] 
+                    # 该类型节点中属于当前文件的全部特征 features[node_type][file_mask] [has, out_size]
+                    # 在第一维取平均 mean(0) [out_size]
+                    # 添加到graph_embedded [out_size]
                     graph_embedded += features[node_type][file_mask].mean(0)
             
-            # 添加到batched_graph_embedded
+            # 添加到batched_graph_embedded [batch_size, out_size]
             batched_graph_embedded.append(graph_embedded.tolist())
         # 转化为tensor
         batched_graph_embedded = torch.tensor(batched_graph_embedded).to(self.device)
+        
         if save_featrues:
             torch.save(batched_graph_embedded, save_featrues)
         # 输入MLP获得分类结果
-        # [batch_size, node_num, out_size] ->  [batch_size, node_num, re_size]
+        # [batch_size, out_size] ->  [batch_size, re_size]
         output = self.classify(batched_graph_embedded)
-
+ 
         return output, batched_graph_embedded
 
 '''测试单个文件'''
 if __name__ == '__main__':
-    pass
+    compress_graph = '/workspaces/solidity/integrate_dataset/other/integrate/compress.gpickle'
+    classfier = MANDOGraphClassifier(compress_graph)
+
+    example_graph = ['smartbugs_other_crypto_roulette.sol']
+    output, batched_graph_embedded = classfier(example_graph)
+    input = torch.randn(1, 2, requires_grad=True)
+    loss = F.cross_entropy(input, output)
+    loss.backward()
+    
+    # 查看梯度
+    for name, param in classfier.named_parameters():
+        if param.grad is not None:
+            print(name)
