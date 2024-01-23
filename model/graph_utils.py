@@ -149,3 +149,14 @@ def get_node_expression(nx_graph):
             node_expressions[node_type].append(node_expression)
     
     return node_expressions
+
+def get_symmatrical_metapaths(symmetrical_global_graph):
+    meta_paths = []
+    for mt in symmetrical_global_graph.canonical_etypes:
+        if mt[0] == mt[-1]:
+            ref_mt = [mt]
+        else:
+            ref_mt = [mt, mt[::-1]]
+        if ref_mt not in meta_paths:
+            meta_paths.append(ref_mt)
+    return meta_paths

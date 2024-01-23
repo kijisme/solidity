@@ -187,58 +187,82 @@ class MANDOGraphClassifier(nn.Module):
             if hasattr(layer, 'reset_parameters'):
                     layer.reset_parameters()
 
-    def forward(self, batched_g_name, save_featrues=None):
-        
-        # 全图输入HAN模型获得节点特征表示
+    
+    def get_assemble_node_features(self):
+         # 全图输入HAN模型获得节点特征表示
         features = {}
         for han in self.layers:
-            # 获取当前HAN层的节点类型
             ntype = han.meta_paths[0][0][0]
-            # 对该类型节点expression进行词嵌入
-            # feature [node_num, in_size] -> [node_num, out_size]
+          
             feature = han(self.symmetrical_global_graph, self.symmetrical_global_graph.ndata['feat'][ntype])
 
             if ntype not in features.keys():
-                # features[ntype] [node_num, out_size] -> [meta_num, node_num, out_size]
                 features[ntype] = feature.unsqueeze(0)
             else:
                 features[ntype] = torch.cat((features[ntype], feature.unsqueeze(0)))
             
             # features ntype -> feature [meta_num, node_num, out_size] n为node_type出现在元路径中起始节点的次数
             # mean(0) ntype -> feature [node_num, out_size]
-        for ntype in features.keys():
-            features[ntype] = features[ntype].mean(0)
+        # for ntype in features.keys():
+        #     features[ntype] = features[ntype].mean(0)
         
-        batched_graph_embedded = []
-        # 获取每一个文件的图嵌入
-        for g_name in batched_g_name:
-            # 获取文件名称的索引
-            file_ids = self.filename_mapping[g_name]
-            graph_embedded = 0
-            for node_type in self.node_types:
-                # 获取当前文件出现节点的mask [id]==file_id -> [isFile] ([0,0,1...])
-                file_mask = self.symmetrical_global_graph.ndata['filename'][node_type] == file_ids
-                
-                # 保证当前文件中有图中的节点
-                if file_mask.sum().item() != 0:
-                    # 元路径中该类型节点的全部特性 features[node_type] [node_num, out_size] 
-                    # 该类型节点中属于当前文件的全部特征 features[node_type][file_mask] [has, out_size]
-                    # 在第一维取平均 mean(0) [out_size]
-                    # 添加到graph_embedded [out_size]
-                    graph_embedded += features[node_type][file_mask].mean(0)
+        return {k: torch.mean(v, dim=0) for k, v in features.items()}
+
+    def forward(self, batched_g_name, save_featrues=None):
+        
+        # # 全图输入HAN模型获得节点特征表示
+        # features = {}
+        # for han in self.layers:
+        #     # 获取当前HAN层的节点类型
+        #     ntype = han.meta_paths[0][0][0]
+        #     # 对该类型节点expression进行词嵌入
+        #     # feature [node_num, in_size] -> [node_num, out_size]
+        #     feature = han(self.symmetrical_global_graph, self.symmetrical_global_graph.ndata['feat'][ntype])
+
+        #     if ntype not in features.keys():
+        #         # features[ntype] [node_num, out_size] -> [meta_num, node_num, out_size]
+        #         features[ntype] = feature.unsqueeze(0)
+        #     else:
+        #         features[ntype] = torch.cat((features[ntype], feature.unsqueeze(0)))
             
-            # 添加到batched_graph_embedded [batch_size, out_size]
-            batched_graph_embedded.append(graph_embedded.tolist())
-        # 转化为tensor
-        batched_graph_embedded = torch.tensor(batched_graph_embedded).to(self.device)
+        #     # features ntype -> feature [meta_num, node_num, out_size] n为node_type出现在元路径中起始节点的次数
+        #     # mean(0) ntype -> feature [node_num, out_size]
+        # for ntype in features.keys():
+        #     features[ntype] = features[ntype].mean(0)
         
-        if save_featrues:
-            torch.save(batched_graph_embedded, save_featrues)
-        # 输入MLP获得分类结果
-        # [batch_size, out_size] ->  [batch_size, re_size]
-        output = self.classify(batched_graph_embedded)
+        features = self.get_assemble_node_features()
+        return features
+    
+        # batched_graph_embedded = []
+        # # 获取每一个文件的图嵌入
+        # for g_name in batched_g_name:
+        #     # 获取文件名称的索引
+        #     file_ids = self.filename_mapping[g_name]
+        #     graph_embedded = 0
+        #     for node_type in self.node_types:
+        #         # 获取当前文件出现节点的mask [id]==file_id -> [isFile] ([0,0,1...])
+        #         file_mask = self.symmetrical_global_graph.ndata['filename'][node_type] == file_ids
+                
+        #         # 保证当前文件中有图中的节点
+        #         if file_mask.sum().item() != 0:
+        #             # 元路径中该类型节点的全部特性 features[node_type] [node_num, out_size] 
+        #             # 该类型节点中属于当前文件的全部特征 features[node_type][file_mask] [has, out_size]
+        #             # 在第一维取平均 mean(0) [out_size]
+        #             # 添加到graph_embedded [out_size]
+        #             graph_embedded += features[node_type][file_mask].mean(0)
+            
+        #     # 添加到batched_graph_embedded [batch_size, out_size]
+        #     batched_graph_embedded.append(graph_embedded.tolist())
+        # # 转化为tensor
+        # batched_graph_embedded = torch.tensor(batched_graph_embedded).to(self.device)
+        
+        # if save_featrues:
+        #     torch.save(batched_graph_embedded, save_featrues)
+        # # 输入MLP获得分类结果
+        # # [batch_size, out_size] ->  [batch_size, re_size]
+        # output = self.classify(batched_graph_embedded)
  
-        return output, batched_graph_embedded
+        # return output, batched_graph_embedded
 
 '''测试单个文件'''
 if __name__ == '__main__':
@@ -246,12 +270,14 @@ if __name__ == '__main__':
     classfier = MANDOGraphClassifier(compress_graph)
 
     example_graph = ['smartbugs_other_crypto_roulette.sol']
-    output, batched_graph_embedded = classfier(example_graph)
-    input = torch.randn(1, 2, requires_grad=True)
-    loss = F.cross_entropy(input, output)
-    loss.backward()
+    feature = classfier(example_graph)
+    print()
+    # output, batched_graph_embedded = classfier(example_graph)
+    # input = torch.randn(1, 2, requires_grad=True)
+    # loss = F.cross_entropy(input, output)
+    # loss.backward()
     
-    # 查看梯度
-    for name, param in classfier.named_parameters():
-        if param.grad is not None:
-            print(name)
+    # # 查看梯度
+    # for name, param in classfier.named_parameters():
+    #     if param.grad is not None:
+    #         print(name)
