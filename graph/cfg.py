@@ -276,7 +276,7 @@ def get_node_info(node, list_sol_file_vul_info):
         if node.variable_declaration:
             node_expression = str(node.variable_declaration)
         else:
-            node_expression = f'[{node_type}]'
+            node_expression = None
 
     node_token = "_".join([node_type, str(node_expression)])
 

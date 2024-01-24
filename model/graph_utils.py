@@ -137,19 +137,6 @@ def get_length_2_metapath(symmetrical_global_graph):
 
     return metapath_list
 
-def get_node_expression(nx_graph):
-    nx_g = nx_graph
-    node_expressions = {}
-    for node, node_data in nx_g.nodes(data=True):
-        node_type = node_data['node_type']
-        node_expression = node_data['node_expression']
-        if node_type not in node_expressions.keys():
-            node_expressions[node_type] = [node_expression]
-        else:
-            node_expressions[node_type].append(node_expression)
-    
-    return node_expressions
-
 def get_symmatrical_metapaths(symmetrical_global_graph):
     meta_paths = []
     for mt in symmetrical_global_graph.canonical_etypes:
@@ -160,3 +147,27 @@ def get_symmatrical_metapaths(symmetrical_global_graph):
         if ref_mt not in meta_paths:
             meta_paths.append(ref_mt)
     return meta_paths
+
+def get_node_expression(nx_graph):
+    nx_g = nx_graph
+    node_content = {}
+    for _, node_data in nx_g.nodes(data=True):
+        node_type = node_data['node_type']
+        node_expression = node_data['node_expression']
+        if node_type not in node_content.keys():
+            node_content[node_type] = [node_expression]
+        else:
+            node_content[node_type].append(node_expression)
+    return node_content
+
+def map_node_embedding(nx_graph, embedding):
+    nx_g = nx_graph
+    features = {}
+    assert len(nx_g.nodes) == embedding.shape[0]
+    for node_ids, node_data in nx_g.nodes(data=True):
+        node_type = node_data['node_type']
+        if node_type not in features:
+            features[node_type] = embedding[node_ids].unsqueeze(0)
+        else:
+            features[node_type] = torch.cat((features[node_type], embedding[node_ids].unsqueeze(0)))
+    return features
