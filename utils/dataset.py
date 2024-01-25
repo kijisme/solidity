@@ -8,9 +8,9 @@ from dgl.data import DGLDataset
 
 class contractVulnDataset(DGLDataset):
     def __init__(self, label_json_path, raw_dir=None, force_reload=True, verbose=False):
+        self.label_json_path = label_json_path
         super().__init__(name='contractVuln',raw_dir=raw_dir,force_reload=force_reload,verbose=verbose)
         
-        self.label_json_path = label_json_path
         # 自动执行 self.process()
         
     def process(self):

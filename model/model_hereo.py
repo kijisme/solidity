@@ -119,6 +119,21 @@ class graphClassify(nn.Module):
         feature = torch.zeros(len(self.ntypes_dict), dtype=torch.float)
         feature[self.ntypes_dict[ntype]] = 1
         return feature
+    
+    def reset_parameters(self):
+        
+        for model in self.classify:
+            for layer in model.children():
+                if hasattr(layer, 'reset_parameters'):
+                    layer.reset_parameters()
+
+        for layer in self.han.children():
+            if hasattr(layer, 'reset_parameters'):
+                layer.reset_parameters()
+
+        for layer in self.fuse.children():
+            if hasattr(layer, 'reset_parameters'):
+                layer.reset_parameters()
 
     def forward(self, batched_graph):
         batch_output = []

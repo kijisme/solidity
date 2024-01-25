@@ -36,7 +36,7 @@ def get_content_embedding(content_text, key_num, embedding_dim, window, min_coun
 if __name__ == '__main__':
     # 下载语料库
     # nltk.download('punkt')
-    compressed_global_graph_path = '/workspaces/solidity/integrate_dataset/other/integrate/compress.gpickle'
+    compressed_global_graph_path = '/workspaces/solidity/integrate_dataset/bad_randomness/integrate/compress.gpickle'
     # 读取图文件
     nx_graph = load_hetero_nx_graph(compressed_global_graph_path)
     node_content = [node_data['node_expression'] for _, node_data in nx_graph.nodes(data=True)]
