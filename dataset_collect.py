@@ -9,8 +9,10 @@ def collect_clean_dataset(dataset_dir, vuln_all_dir, ratio):
     with open(source_path, 'r') as f:
         clean_items = list(json.load(f))
     len_clean = len(clean_items)
+
     for vuln in vuln_all_dir:
-        target_path = os.path.join(dataset_dir, vuln, 'integrate', 'clean_vulnerabilities.json')
+        target_path = os.path.join(dataset_dir, vuln, 'integrate', f'clean_vulnerabilities_{ratio}.json')
+        # target_path = os.path.join(dataset_dir, vuln, 'clean_vulnerabilities.json')
         vuln_item_num = vuln_all_dir[vuln]
         # np.random.choice(a=np.arange(5), size=5, replace=False, p=None)
         # clean_choose = random.choices(np.arange(len_clean), k=vuln_item_num*ratio)
@@ -22,13 +24,13 @@ def collect_clean_dataset(dataset_dir, vuln_all_dir, ratio):
         with open(target_path, 'w') as f:
             json.dump(clean_choose_items, f)
 
-def concat_json(dataset_dir, vuln_all):
+def concat_json(dataset_dir, vuln_all, ratio):
     for vuln in vuln_all:
         all_items = []
 
         vuln_path = os.path.join(dataset_dir, vuln, 'integrate', 'vuln_vulnerabilities.json')
-        clean_path = os.path.join(dataset_dir, vuln, 'integrate', 'clean_vulnerabilities.json')
-        target_path = os.path.join(dataset_dir, vuln, 'integrate', 'vulnerabilities.json')
+        clean_path = os.path.join(dataset_dir, vuln, 'integrate', f'clean_vulnerabilities_{ratio}.json')
+        target_path = os.path.join(dataset_dir, vuln, 'integrate', f'vulnerabilities_{ratio}.json')
 
         with open(vuln_path, 'r') as f:
             items = json.load(f)
@@ -41,10 +43,10 @@ def concat_json(dataset_dir, vuln_all):
         with open(target_path,'w') as f:
             json.dump(all_items, f)
 
-def make_annotaiton(dataset_dir, vuln_all):
+def make_annotaiton(dataset_dir, vuln_all, ratio):
     for vuln in vuln_all:
-        source_json_path = os.path.join(dataset_dir, vuln, 'integrate', 'vulnerabilities.json')
-        target_json_path = os.path.join(dataset_dir, vuln, 'integrate', 'graph_label.json')
+        source_json_path = os.path.join(dataset_dir, vuln, 'integrate', f'vulnerabilities_{ratio}.json')
+        target_json_path = os.path.join(dataset_dir, vuln, 'integrate', f'graph_label_{ratio}.json')
         
         target = []
         with open(source_json_path, 'r') as f:
@@ -73,11 +75,11 @@ if __name__ == "__main__":
             len_item = len(json.load(f))
         vuln_all_dir[vuln] = len_item
     
-    ratio = 1
+    ratio = 2
 
     # 为每种漏洞选择正样本1:1
     collect_clean_dataset(dataset_dir, vuln_all_dir, ratio)
     # 合并json文件
-    concat_json(dataset_dir, vuln_all)
+    concat_json(dataset_dir, vuln_all, ratio)
     # 生成图标签索引文件
-    make_annotaiton(dataset_dir, vuln_all)
+    make_annotaiton(dataset_dir, vuln_all, ratio)

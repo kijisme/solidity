@@ -1,5 +1,6 @@
 import os
 import sys
+import tqdm
 import warnings
 import numpy as np
 from shutil import rmtree
@@ -22,13 +23,15 @@ from model_hereo import graphClassify
 
 warnings.filterwarnings("ignore")
 
-def train(model, dataloader, optimizer, loss_fcn, device):
+def train(model, dataloader, optimizer, loss_fcn, device, epoch):
     model.train()
 
     metric= {'acc':0, 'macro_f1':0, 'micro_f1':0}
     total_loss = 0
-
-    for idx, (batched_graph, labels) in enumerate(dataloader):
+    
+    tepoch = tqdm(dataloader, desc='Train')
+    for idx, (batched_graph, labels) in enumerate(tepoch):
+    # for idx, (batched_graph, labels) in enumerate(dataloader):
         labels = labels.to(device)
         optimizer.zero_grad()
         logits = model(batched_graph)
@@ -46,20 +49,29 @@ def train(model, dataloader, optimizer, loss_fcn, device):
         metric['macro_f1'] += train_macro_f1
         total_loss += loss.item()
 
+        tepoch.set_description(f'Epoch [{epoch+1}]')
+        tepoch.set_postfix(loss = total_loss/(idx+1), 
+                           acc = metric['acc']/(idx+1), 
+                           micro_f1 = metric['micro_f1']/(idx+1), 
+                           macro_f1 = metric['macro_f1']/(idx+1)
+                           )
+
     steps = idx + 1
     for item in metric:
         metric[item] = metric[item]/steps
     
     return model, total_loss/steps, metric
 
-def validate(model, dataloader, loss_fcn, device):
+def validate(model, dataloader, loss_fcn, device, epoch):
     model.eval()
 
     total_loss = 0
     metric= {'acc':0, 'macro_f1':0, 'micro_f1':0}
 
     with torch.no_grad():
-        for idx, (batched_graph, labels) in enumerate(dataloader):
+        tepoch = tqdm(dataloader, desc='Val')
+        for idx, (batched_graph, labels) in enumerate(tepoch):
+        # for idx, (batched_graph, labels) in enumerate(dataloader):
             labels = labels.to(device)
             logits = model(batched_graph)
             loss = loss_fcn(logits, labels)
@@ -70,7 +82,14 @@ def validate(model, dataloader, loss_fcn, device):
             metric['acc'] += val_acc
             metric['micro_f1'] += val_micro_f1
             metric['macro_f1'] += val_macro_f1
-    
+
+            tepoch.set_description(f'Epoch [{epoch+1}]')
+            tepoch.set_postfix(loss = total_loss/(idx+1), 
+                               acc = metric['acc']/(idx+1), 
+                               micro_f1 = metric['micro_f1']/(idx+1), 
+                               macro_f1 = metric['macro_f1']/(idx+1)
+                               )
+
     steps = idx + 1
     for item in metric:
         metric[item] = metric[item]/steps
@@ -84,7 +103,9 @@ def test(model, dataloader, device):
     total_logits = []
     total_target = []
     with torch.no_grad():
-        for idx, (batched_graph, labels) in enumerate(dataloader):
+        tepoch = tqdm(dataloader, desc='Val')
+        for idx, (batched_graph, labels) in enumerate(tepoch):
+        # for idx, (batched_graph, labels) in enumerate(dataloader):
             labels = labels.to(device)
             logits = model(batched_graph)
             total_logits += logits.tolist()
@@ -94,6 +115,12 @@ def test(model, dataloader, device):
             metric['acc'] += test_acc
             metric['micro_f1'] += test_micro_f1
             metric['macro_f1'] += test_macro_f1
+            tepoch.set_description(f'step [{idx+1}]')
+            tepoch.set_postfix(
+                               acc = metric['acc']/(idx+1), 
+                               micro_f1 = metric['micro_f1']/(idx+1), 
+                               macro_f1 = metric['macro_f1']/(idx+1)
+                               )
 
     steps = idx + 1
     for item in metric:
@@ -137,8 +164,8 @@ def train_k_fold(dataset, total_train, kfold, batch_size, model, device, epochs,
         model.to(device)
 
         for epoch in range(epochs):
-            model, train_loss, train_metric = train(model, train_dataloader, optimizer, loss_fcn, device)
-            val_loss, val_metric = validate(model, val_dataloader, loss_fcn, device)
+            model, train_loss, train_metric = train(model, train_dataloader, optimizer, loss_fcn, device, epoch)
+            val_loss, val_metric = validate(model, val_dataloader, loss_fcn, device, epoch)
 
             train_results[fold]['loss'].append(train_loss)
             train_results[fold]['acc'].append(train_metric['acc'])

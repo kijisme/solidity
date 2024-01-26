@@ -132,13 +132,13 @@ if __name__ == "__main__":
 
     # print(vuln_all, vuln_dir)
 
-    # # 新建文件夹
-    # mkdir_vuln_dataset(target_dir, vuln_dir)
+    # 新建文件夹
+    mkdir_vuln_dataset(target_dir, vuln_dir)
     # mkdir_clean_dataset(target_dir)
 
-    # # 数据集转移
-    # migrate_vuln_dataset(dataset_dir, target_dir, vuln_dir, json_dir)
-    migrate_clean_dataset(dataset_dir, target_dir, clean_json)
+    # 数据集转移
+    migrate_vuln_dataset(dataset_dir, target_dir, vuln_dir, json_dir)
+    # migrate_clean_dataset(dataset_dir, target_dir, clean_json)
 
     # # 数据集合并
     # mkdir_integrate_dataset(target_dir, vuln_all)
