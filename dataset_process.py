@@ -2,8 +2,6 @@ import os
 import json
 import subprocess
 
-root_path = '/workspaces/solidity'
-
 def mkdir_vuln_dataset(target_dir, vuln_dir):
     for dataset in vuln_dir:
         for vuln in vuln_dir[dataset]:
@@ -43,7 +41,7 @@ def migrate_vuln_dataset(source_dir, target_dir, vuln_dir, json_dir):
                 if item['path'].split('/')[-2] == vuln:
                     new_name = '_'.join(item['path'].split('/'))
                     item['name'] = new_name
-                    item['path'] = f'{target}/{new_name}'
+                    item['path'] = f'{dataset}/{vuln}/{new_name}'
                     items_vuln.append(item)
             # 存入新文件
             with open(target_json, 'w') as f:
@@ -51,7 +49,7 @@ def migrate_vuln_dataset(source_dir, target_dir, vuln_dir, json_dir):
 
 def mkdir_clean_dataset(target_dir):
     target = os.path.join(target_dir, 'clean')
-    command = f'mkdir {target}'
+    command = f'mkdir -p {target}'
     subprocess.run(command, shell=True)
 
 def migrate_clean_dataset(source_dir, target_dir, clean_json):
@@ -70,7 +68,7 @@ def migrate_clean_dataset(source_dir, target_dir, clean_json):
         new_path = os.path.join(target_dataset, new_name)
         os.rename(old_path, new_path)
         item['name'] = new_name
-        item['path'] = new_path
+        item['path'] = f'clean/{new_name}'
 
     target_json = os.path.join(target_dataset, 'clean_vulnerabilities.json')
     
@@ -93,7 +91,7 @@ def mkdir_integrate_dataset(target_dir, vuln_all):
     
     for vuln in vuln_all:
         target = os.path.join(target_dir, vuln, 'integrate')
-        command = f'mkdir {target}'
+        command = f'mkdir -p {target}'
         subprocess.run(command, shell=True)
 
 def integrate_dataset(target_dir, vuln_dir):
@@ -122,11 +120,19 @@ def integrate_json(target_dir, vuln_all):
 ''' 测试单个文件'''
 if __name__ == "__main__":
     
-    dataset_dir = '/workspaces/solidity/dataset'
+    # dataset_dir = '/workspaces/solidity/dataset'
+    # dataset_all = ['smartbugs', 'solidifi']
+    # target_dir = '/workspaces/solidity/integrate_dataset'
+    # json_dir = '/workspaces/solidity/json'
+    # clean_json = '/workspaces/solidity/json/clean.json'
+
+    root_path = '/workspaces/solidity'
+    dataset_dir = os.path.join(root_path, 'dataset')
     dataset_all = ['smartbugs', 'solidifi']
-    target_dir = '/workspaces/solidity/integrate_dataset'
-    json_dir = '/workspaces/solidity/json'
-    clean_json = '/workspaces/solidity/json/clean.json'
+
+    target_dir = os.path.join(root_path, 'integrate_dataset')
+    json_dir = os.path.join(root_path, 'json')
+    clean_json = os.path.join(root_path, 'json/clean.json')
 
     vuln_all, vuln_dir = get_vuln_info(dataset_dir, dataset_all) 
 
@@ -134,13 +140,13 @@ if __name__ == "__main__":
 
     # 新建文件夹
     mkdir_vuln_dataset(target_dir, vuln_dir)
-    # mkdir_clean_dataset(target_dir)
+    mkdir_clean_dataset(target_dir)
 
     # 数据集转移
     migrate_vuln_dataset(dataset_dir, target_dir, vuln_dir, json_dir)
-    # migrate_clean_dataset(dataset_dir, target_dir, clean_json)
+    migrate_clean_dataset(dataset_dir, target_dir, clean_json)
 
     # # 数据集合并
-    # mkdir_integrate_dataset(target_dir, vuln_all)
-    # integrate_dataset(target_dir, vuln_dir)
-    # integrate_json(target_dir, vuln_all)
+    mkdir_integrate_dataset(target_dir, vuln_all)
+    integrate_dataset(target_dir, vuln_dir)
+    integrate_json(target_dir, vuln_all)
