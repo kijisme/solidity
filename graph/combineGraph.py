@@ -85,7 +85,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     isSave = args.isSave
-
+    ratio = 1
     # 获取全部漏洞类型
     all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
     # all_vuln_type = [args.vuln_type]
@@ -93,9 +93,9 @@ if __name__ == "__main__":
     # 对每一种漏洞进行处理
     for vuln_type in all_vuln_type:
         # 获取两种图和合并图的存储路径
-        cfg_path = os.path.join(dataset_root, vuln_type, 'integrate','cfg.gpickle')
-        cg_path = os.path.join(dataset_root, vuln_type, 'integrate', 'cg.gpickle')
-        output_path = os.path.join(dataset_root, vuln_type, 'integrate', 'compress.gpickle')
+        cfg_path = os.path.join(dataset_root, vuln_type, 'integrate', str(ratio), 'cfg.gpickle')
+        cg_path = os.path.join(dataset_root, vuln_type, 'integrate', str(ratio), 'cg.gpickle')
+        output_path = os.path.join(dataset_root, vuln_type, 'integrate', str(ratio), 'compress.gpickle')
         # 读取图
         cfg = nx.read_gpickle(cfg_path)
         cg = nx.read_gpickle(cg_path)

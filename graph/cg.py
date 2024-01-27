@@ -75,12 +75,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     isSave = args.isSave
-
+    ratio = 1
     # 获取全部漏洞类型
     all_vuln_type = [x for x in os.listdir(dataset_dir) if x != 'clean']
     # all_vuln_type = [args.vuln_type]
     # print(all_vuln_type)
     # 对每一种漏洞类型进行处理
     for vuln_type in all_vuln_type:
-        vuln_dataset_dir = os.path.join(dataset_dir, vuln_type, 'integrate')
+        vuln_dataset_dir = os.path.join(dataset_dir, vuln_type, 'integrate', str(ratio))
         get_vuln_call_graph(dataset_dir, vuln_dataset_dir, isSave=isSave)

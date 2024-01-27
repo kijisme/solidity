@@ -307,6 +307,7 @@ if __name__ == "__main__":
     parser.add_argument('--isSave', action='store_true', help='是否保存生成图')
     # parser.add_argument('--vuln_type', default='other', type=str, help='检测漏洞类型')
     args = parser.parse_args()
+    ratio = 1
 
     isSave = args.isSave
     # 获取全部漏洞类型
@@ -315,5 +316,5 @@ if __name__ == "__main__":
     # all_vuln_type = ['unchecked_low_level_calls']
     # 对每一种漏洞类型进行处理
     for vuln_type in all_vuln_type:
-        vuln_dataset_dir = os.path.join(dataset_dir, vuln_type, 'integrate')
+        vuln_dataset_dir = os.path.join(dataset_dir, vuln_type, 'integrate', str(ratio))
         get_vuln_cfg_graph(dataset_dir, vuln_dataset_dir, isSave=isSave)

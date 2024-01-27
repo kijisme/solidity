@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import subprocess
 import numpy as np
 
 def collect_clean_dataset(dataset_dir, vuln_all_dir, ratio):
@@ -11,7 +12,9 @@ def collect_clean_dataset(dataset_dir, vuln_all_dir, ratio):
     len_clean = len(clean_items)
 
     for vuln in vuln_all_dir:
-        target_path = os.path.join(dataset_dir, vuln, 'integrate', f'clean_vulnerabilities_{ratio}.json')
+        command = f"mkdir -p {os.path.join(dataset_dir, vuln, 'integrate', str(ratio))}"
+        subprocess.run(command, shell=True)
+        target_path = os.path.join(dataset_dir, vuln, 'integrate', str(ratio), 'clean_vulnerabilities.json')
         # target_path = os.path.join(dataset_dir, vuln, 'clean_vulnerabilities.json')
         vuln_item_num = vuln_all_dir[vuln]
         # np.random.choice(a=np.arange(5), size=5, replace=False, p=None)
@@ -27,10 +30,11 @@ def collect_clean_dataset(dataset_dir, vuln_all_dir, ratio):
 def concat_json(dataset_dir, vuln_all, ratio):
     for vuln in vuln_all:
         all_items = []
-
+        command = f"mkdir -p {os.path.join(dataset_dir, vuln, 'integrate', ratio)}"
+        subprocess.run(command, shell=True)
         vuln_path = os.path.join(dataset_dir, vuln, 'integrate', 'vuln_vulnerabilities.json')
-        clean_path = os.path.join(dataset_dir, vuln, 'integrate', f'clean_vulnerabilities_{ratio}.json')
-        target_path = os.path.join(dataset_dir, vuln, 'integrate', f'vulnerabilities_{ratio}.json')
+        clean_path = os.path.join(dataset_dir, vuln, 'integrate', ratio, 'clean_vulnerabilities.json')
+        target_path = os.path.join(dataset_dir, vuln, 'integrate', ratio, 'vulnerabilities.json')
 
         with open(vuln_path, 'r') as f:
             items = json.load(f)
@@ -45,8 +49,11 @@ def concat_json(dataset_dir, vuln_all, ratio):
 
 def make_annotaiton(dataset_dir, vuln_all, ratio):
     for vuln in vuln_all:
-        source_json_path = os.path.join(dataset_dir, vuln, 'integrate', f'vulnerabilities_{ratio}.json')
-        target_json_path = os.path.join(dataset_dir, vuln, 'integrate', f'graph_label_{ratio}.json')
+        command = f"mkdir -p {os.path.join(dataset_dir, vuln, 'integrate', ratio)}"
+        subprocess.run(command, shell=True)
+
+        source_json_path = os.path.join(dataset_dir, vuln, 'integrate', ratio, 'vulnerabilities.json')
+        target_json_path = os.path.join(dataset_dir, vuln, 'integrate', ratio, 'graph_label.json')
         
         target = []
         with open(source_json_path, 'r') as f:
@@ -77,11 +84,11 @@ if __name__ == "__main__":
             len_item = len(json.load(f))
         vuln_all_dir[vuln] = len_item
     
-    ratio = 2
+    ratio = 1
 
     # 为每种漏洞选择正样本1:1
     collect_clean_dataset(dataset_dir, vuln_all_dir, ratio)
     # 合并json文件
-    concat_json(dataset_dir, vuln_all, ratio)
+    concat_json(dataset_dir, vuln_all, str(ratio))
     # 生成图标签索引文件
-    make_annotaiton(dataset_dir, vuln_all, ratio)
+    make_annotaiton(dataset_dir, vuln_all, str(ratio))
