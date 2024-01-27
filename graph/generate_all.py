@@ -5,10 +5,10 @@ from cfg import get_vuln_cfg_graph
 from cg import get_vuln_call_graph
 from combineGraph import *
 
-def get_all_graph(vuln_dataset_dir, isSave = False):
+def get_all_graph(dataset_dir, vuln_dataset_dir, isSave = False):
 
-    get_vuln_cfg_graph(vuln_dataset_dir, isSave)
-    get_vuln_call_graph(vuln_dataset_dir, isSave)
+    # get_vuln_cfg_graph(dataset_dir, vuln_dataset_dir, isSave)
+    get_vuln_call_graph(dataset_dir, vuln_dataset_dir, isSave)
 
     cfg_path = os.path.join(vuln_dataset_dir, 'cfg.gpickle')
     cg_path = os.path.join(vuln_dataset_dir, 'cg.gpickle')
@@ -37,6 +37,11 @@ def get_all_graph(vuln_dataset_dir, isSave = False):
 
 if __name__ == "__main__":
 
-    vuln_dataset_dir = '/workspaces/solidity/integrate/1'
+    root_path = '/workspaces/solidity'
+    dataset_dir = os.path.join(root_path, 'dataset')
+    ratio = 1
+
+    vuln_dataset_dir = os.path.join(root_path, 'integrate', str(ratio))
+    # vuln_dataset_dir = '/workspaces/solidity/integrate/1'
     isSave = True
-    get_all_graph(vuln_dataset_dir, isSave)
+    get_all_graph(dataset_dir, vuln_dataset_dir, isSave)

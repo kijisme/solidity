@@ -13,7 +13,7 @@ from vulnInfo import get_vulnerabilities, get_vuln_of_node
 root_dir = '/workspaces/solidity'
 
 '''获取一种漏洞的完整图'''
-def get_full_cfg_graph(vulnerabilities_info):
+def get_full_cfg_graph(dataset_dir, vulnerabilities_info):
     # smart_contracts 该漏洞全部.sol文件的路径
     # data_vulnerabilities 该漏洞全部漏洞信息
 
@@ -31,8 +31,9 @@ def get_full_cfg_graph(vulnerabilities_info):
         # 获取文件名称
         sol_file_name = file_item['name']
         # 使用slither解析
-        slither = Slither(sol_file_path)
-
+        # slither = Slither(sol_file_path)
+        # os.path.join(dataset_dir, sol_file_path)
+        slither = Slither(os.path.join(dataset_dir, sol_file_path))
         # 获取文件全部漏洞信息
         list_sol_file_vul_info = get_vulnerabilities(sol_file_name, vulnerabilities_info)
         # 提取单个文件图
@@ -248,12 +249,12 @@ def get_full_cfg_graph(vulnerabilities_info):
                     
 
 '''获取单种漏洞图'''
-def get_vuln_cfg_graph(vuln_dataset_dir, isSave=False):
+def get_vuln_cfg_graph(dataset_dir, vuln_dataset_dir, isSave=False):
 
     vuln_json_path = os.path.join(vuln_dataset_dir, 'vulnerabilities.json')
     with open(vuln_json_path, 'r') as f:
         vulnerabilities_info = list(json.load(f))
-    bug_full_graph = get_full_cfg_graph(vulnerabilities_info)
+    bug_full_graph = get_full_cfg_graph(dataset_dir, vulnerabilities_info)
     # ##########################################
     from utils import check_null
     if not check_null(bug_full_graph):
@@ -300,7 +301,7 @@ def check_inheriate(function, contract_name):
 ''' 测试单个文件'''
 if __name__ == "__main__":
 
-    dataset_root = f'{root_dir}/integrate_dataset'
+    dataset_dir = f'{root_dir}/integrate_dataset'
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--isSave', action='store_true', help='是否保存生成图')
@@ -309,10 +310,10 @@ if __name__ == "__main__":
 
     isSave = args.isSave
     # 获取全部漏洞类型
-    all_vuln_type = [x for x in os.listdir(dataset_root) if x != 'clean']
+    all_vuln_type = [x for x in os.listdir(dataset_dir) if x != 'clean']
     # all_vuln_type = [args.vuln_type]
     # all_vuln_type = ['unchecked_low_level_calls']
     # 对每一种漏洞类型进行处理
     for vuln_type in all_vuln_type:
-        vuln_dataset_dir = os.path.join(dataset_root, vuln_type, 'integrate')
-        get_vuln_cfg_graph(vuln_dataset_dir, isSave=isSave)
+        vuln_dataset_dir = os.path.join(dataset_dir, vuln_type, 'integrate')
+        get_vuln_cfg_graph(dataset_dir, vuln_dataset_dir, isSave=isSave)

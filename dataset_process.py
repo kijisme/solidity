@@ -41,7 +41,8 @@ def migrate_vuln_dataset(source_dir, target_dir, vuln_dir, json_dir):
                 if item['path'].split('/')[-2] == vuln:
                     new_name = '_'.join(item['path'].split('/'))
                     item['name'] = new_name
-                    item['path'] = f'{dataset}/{vuln}/{new_name}'
+                    # item['path'] = f'{dataset}/{vuln}/{new_name}'
+                    item['path'] = f'{vuln}/{dataset}/{new_name}'
                     items_vuln.append(item)
             # 存入新文件
             with open(target_json, 'w') as f:
