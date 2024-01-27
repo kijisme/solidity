@@ -39,8 +39,12 @@ def integrate_all_vuln(dataset_dir, target, ratio):
 
 
 if __name__ == "__main__":
-    dataset_dir = '/workspaces/solidity/integrate_dataset'
-    target = '/workspaces/solidity/integrate'
+    
+    root_path = '/workspaces/solidity'
+    dataset_dir = os.path.join(root_path, 'integrate_dataset')
+    target = os.path.join(root_path, 'integrate')
+    # dataset_dir = '/workspaces/solidity/integrate_dataset'
+    # target = '/workspaces/solidity/integrate'
 
     ratio = 2
     if not os.path.exists(os.path.join(target, str(ratio))):

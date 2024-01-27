@@ -66,7 +66,9 @@ def make_annotaiton(dataset_dir, vuln_all, ratio):
 
 if __name__ == "__main__":
 
-    dataset_dir = '/workspaces/solidity/integrate_dataset'
+    root_path = '/workspaces/solidity'
+    dataset_dir = os.path.join(root_path, 'integrate_dataset')
+    # dataset_dir = '/workspaces/solidity/integrate_dataset'
     vuln_all = [x for x in os.listdir(dataset_dir) if x != 'clean']
     vuln_all_dir = {}
     for vuln in vuln_all:
