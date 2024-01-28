@@ -36,13 +36,14 @@ def get_content_embedding(content_text, key_num, embedding_dim, window, min_coun
 if __name__ == '__main__':
     # 下载语料库
     # nltk.download('punkt')
-    compressed_global_graph_path = '/workspaces/solidity/integrate_dataset/bad_randomness/integrate/compress.gpickle'
+    compressed_global_graph_path = '/workspaces/solidity/integrate_dataset/unchecked_low_level_calls/integrate/1/compress.gpickle'
     # 读取图文件
     nx_graph = load_hetero_nx_graph(compressed_global_graph_path)
     node_content = [node_data['node_expression'] for _, node_data in nx_graph.nodes(data=True)]
-    key_num = 10
+    key_num = 20
+    embedding_dim = 32
     # 对content进行编码
-    content_emb = get_content_embedding(node_content, key_num, embedding_dim=128, window=5, min_count=1, workers=4)
+    content_emb = get_content_embedding(node_content, key_num, embedding_dim, window=5, min_count=1, workers=4)
     # 保存编码信息
     save_path = os.path.join(compressed_global_graph_path.split('compress.gpickle')[0], 'content_emb.pkl')
     with open(save_path, 'wb') as file:

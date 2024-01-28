@@ -1,8 +1,8 @@
 import os
 import sys
-import tqdm
 import warnings
 import numpy as np
+from tqdm import tqdm
 from shutil import rmtree
 from tabulate import tabulate
 from configparser import ConfigParser
@@ -158,7 +158,7 @@ def train_k_fold(dataset, total_train, kfold, batch_size, model, device, epochs,
         train_dataloader = GraphDataLoader(dataset,batch_size=batch_size,drop_last=False,sampler=train_subsampler)
         val_dataloader = GraphDataLoader(dataset,batch_size=batch_size,drop_last=False,sampler=val_subsampler)
         print('Start training fold {} with {}/{} train/val smart contracts'.format(fold, len(train_subsampler), len(val_subsampler)))
-        
+        # print(len(train_dataloader), len(val_dataloader))
         # 开始训练
         model.reset_parameters()
         model.to(device)
@@ -245,6 +245,7 @@ if __name__ == '__main__':
     np.random.seed(2)
     # # 生成随机索引
     total_samples = len(dataset)
+    
     indices = np.arange(total_samples)
     # # 打乱索引
     np.random.shuffle(indices)
@@ -253,9 +254,9 @@ if __name__ == '__main__':
     total_train, total_test = indices[:split_index], indices[split_index:]
     
     # 获得测试集
-    test_subsampler = torch.utils.data.SubsetRandomSampler(total_test)
-    test_dataloader = GraphDataLoader(dataset, batch_size=batch_size, drop_last=False, sampler=test_subsampler)
-
+    # test_subsampler = torch.utils.data.SubsetRandomSampler(total_test)
+    # test_dataloader = GraphDataLoader(dataset, batch_size=batch_size, drop_last=False, sampler=test_subsampler)
+    # print(len(total_train), len(total_test))
     train_results, val_results = train_k_fold(dataset, total_train, kfold, batch_size, model, device, epochs, loss_fcn, optimizer)
     # # 可视化模型训练结果
     # non_visualize = int(config['train']['non_visualize'])
