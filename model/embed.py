@@ -40,8 +40,8 @@ if __name__ == '__main__':
     # 读取图文件
     nx_graph = load_hetero_nx_graph(compressed_global_graph_path)
     node_content = [node_data['node_expression'] for _, node_data in nx_graph.nodes(data=True)]
-    key_num = 20
-    embedding_dim = 32
+    key_num = 15
+    embedding_dim = 16
     # 对content进行编码
     content_emb = get_content_embedding(node_content, key_num, embedding_dim, window=5, min_count=1, workers=4)
     # 保存编码信息

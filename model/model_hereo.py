@@ -37,7 +37,7 @@ class RGCN(nn.Module):
 
 class graphClassify(nn.Module):
     def __init__(self, compressed_global_graph_path, source_path, content_emb, 
-                 in_size, hidden_size=32, out_size=2, num_heads=8, dropout=0.6, device='cpu'):
+                 in_size, hidden_size=8, out_size=2, num_heads=2, dropout=0.3, device='cpu'):
         super().__init__()
 
         self.source_path = source_path
@@ -91,7 +91,7 @@ class graphClassify(nn.Module):
             nn.Linear(self.hidden_size*num_heads, hidden_size),
             nn.Tanh(),
             nn.Linear(hidden_size, out_size),
-            nn.Softmax(dim=1)
+            # nn.Softmax(dim=1)
         )
 
     def get_node_feature(self, nx_graph, content_emb):
@@ -135,41 +135,51 @@ class graphClassify(nn.Module):
             if hasattr(layer, 'reset_parameters'):
                 layer.reset_parameters()
 
-    def forward(self, batched_graph):
-        batch_output = []
-        for g_name in batched_graph:
-            file_ids = self.filename_mapping[g_name]
-            node_mask = {}
-            for node_type in self.node_types:
-                mask = self.symmetrical_global_graph.ndata['filename'][node_type] == file_ids
-                if mask.sum(0) != 0:
-                    node_mask[node_type] = mask 
-            # 获取子图（相同的结构数据）
-            sub_graph = dgl.node_subgraph(self.symmetrical_global_graph, node_mask)
-            # 特征聚合
-            attribute_emb = sub_graph.ndata['attribute']
-            content_emb = sub_graph.ndata['content']
-            # [node_num, in_size]
-            # print(attribute_emb.dtype, content_emb.dtype)
-            fuse_emb = self.fuse(attribute_emb, content_emb)
-            sub_graph.ndata['feat'] = fuse_emb
-            # sub_graph.ndata['feat'] = attribute_emb
-            features =  self.han(sub_graph, sub_graph.ndata['feat'])
-            sub_graph.ndata['h'] = features
-            # 聚合特征
-            hg = []
-            for _, feature in sub_graph.ndata['h'].items():
-                hg.append(feature)
-            hg = torch.vstack(hg).sum(0)
-            batch_output.append(hg)
-        batch_output = torch.vstack(batch_output)
-        output = self.classify(batch_output)
+    # 拆分成子图处理
+    # def forward(self, batched_graph):
+        
+    #     batch_output = []
+    #     for g_name in batched_graph:
+    #         file_ids = self.filename_mapping[g_name]
+    #         node_mask = {}
+    #         for node_type in self.node_types:
+    #             mask = self.symmetrical_global_graph.ndata['filename'][node_type] == file_ids
+    #             if mask.sum(0) != 0:
+    #                 node_mask[node_type] = mask 
+    #         # 获取子图（相同的结构数据）
+    #         sub_graph = dgl.node_subgraph(self.symmetrical_global_graph, node_mask)
+    #         # 特征聚合
+    #         attribute_emb = sub_graph.ndata['attribute']
+    #         content_emb = sub_graph.ndata['content']
+    #         # [node_num, in_size]
+    #         # print(attribute_emb.dtype, content_emb.dtype)
+    #         fuse_emb = self.fuse(attribute_emb, content_emb)
+    #         sub_graph.ndata['feat'] = fuse_emb
+    #         # sub_graph.ndata['feat'] = attribute_emb
+    #         features =  self.han(sub_graph, sub_graph.ndata['feat'])
+    #         sub_graph.ndata['h'] = features
+    #         # 聚合特征
+    #         hg = []
+    #         for _, feature in sub_graph.ndata['h'].items():
+    #             hg.append(feature)
+    #         hg = torch.vstack(hg).sum(0)
+    #         batch_output.append(hg)
+    #     batch_output = torch.vstack(batch_output)
+    #     output = self.classify(batch_output)
 
-        return output
+    #     return output
 
+    # 全局图处理
     # def forward(self, batched_graph):
 
     #     batch_output = []
+
+    #     attribute_emb = self.symmetrical_global_graph.ndata['attribute']
+    #     content_emb = self.symmetrical_global_graph.ndata['content']
+        
+    #     fuse_emb = self.fuse(attribute_emb, content_emb)
+    #     self.symmetrical_global_graph.ndata['feat'] = fuse_emb
+
     #     features =  self.han(self.symmetrical_global_graph, self.symmetrical_global_graph.ndata['feat'])
     #     self.symmetrical_global_graph.ndata['h'] = features
 
@@ -197,50 +207,51 @@ class graphClassify(nn.Module):
             
 
 
-    # def forward(self, batched_graph):
-    #     batch_output = []
-    #     for g_name in batched_graph:
-    #         # print(g_name)
-    #         file_ids = self.filename_mapping[g_name]
-    #         # print(file_ids)
-    #         node_mask = {}
-    #         for node_type in self.node_types:
-    #             mask = self.symmetrical_global_graph.ndata['filename'][node_type] == file_ids
-    #             if mask.sum(0) != 0:
-    #                 node_mask[node_type] = mask 
+    # 论文方式处理
+    def forward(self, batched_graph):
+
+        batch_output = []
+
+        attribute_emb = self.symmetrical_global_graph.ndata['attribute']
+        content_emb = self.symmetrical_global_graph.ndata['content']
+        
+        fuse_emb = self.fuse(attribute_emb, content_emb)
+        self.symmetrical_global_graph.ndata['feat'] = fuse_emb
+
+        # [node_type] [node_num, hidden_size * num_num]
+        features =  self.han(self.symmetrical_global_graph, self.symmetrical_global_graph.ndata['feat'])
+        self.symmetrical_global_graph.ndata['h'] = features
+
+        for g_name in batched_graph:
+            file_ids = self.filename_mapping[g_name]
+            graph_embedded = []
+            for node_type in self.node_types:
+                file_mask = self.symmetrical_global_graph.ndata['filename'][node_type] == file_ids
+                file_mask = torch.tensor(file_mask, dtype=torch.float)
+                # [feat, node_num] * [node_num, 1]
+                # [feat]
+                print(node_type, torch.matmul(features[node_type].permute(1, 0), file_mask).sum())
+                graph_embedded.append(torch.matmul(features[node_type].permute(1, 0), file_mask))
             
-    #         # 获取子图（相同的结构数据）
-    #         sub_graph = dgl.node_subgraph(self.symmetrical_global_graph, node_mask)
-    #         # 获取子图特征数据
-    #         h = sub_graph.ndata['feat']
-    #         # 特征提取
-    #         output_graph = self.rgcn(sub_graph, h)
-    #         # 输入到子图
-    #         # print(output_graph.keys())
-    #         sub_graph.ndata['h'] = output_graph
-
-    #         # 获取图特征
-    #         hg = []
-    #         for ntype, feature in sub_graph.ndata['h'].items():
-    #             hg.append(feature)
-    #         hg = torch.vstack(hg).sum(0)
-    #         batch_output.append(hg)
-
-    #     # 分类
-    #     batch_output = torch.vstack(batch_output)
-    #     output = self.classify(batch_output)
-    #     return output
+            graph_embedded = torch.vstack(graph_embedded).mean(0)
+            # [feat]
+            batch_output.append(graph_embedded)
+        # 分类
+        # [batch, feat]
+        batch_output = torch.vstack(batch_output)
+        output = self.classify(batch_output)
+        return output
        
 
 '''测试单个文件'''
 if __name__ == '__main__':
-    compress_graph = '/workspaces/solidity/integrate_dataset/other/integrate/compress.gpickle'
-    source_path = '/workspaces/solidity/integrate_dataset/other/integrate/graph_label.json'
-    content_emb = '/workspaces/solidity/integrate_dataset/other/integrate/content_emb.pkl'
+    compress_graph = '/workspaces/solidity/integrate_dataset/other/integrate/1/compress.gpickle'
+    source_path = '/workspaces/solidity/integrate_dataset/other/integrate/1/graph_label.json'
+    content_emb = '/workspaces/solidity/integrate_dataset/other/integrate/1/content_emb.pkl'
     in_size = 32
     classfier = graphClassify(compress_graph, source_path, content_emb, in_size)
 
-    example_graph = ['smartbugs_other_crypto_roulette.sol', 'clean_0x921ae917e843a956650f2bddd95446188cf08b38.sol']
+    example_graph = ['smartbugs_other_crypto_roulette.sol']
 
     output = classfier(example_graph)
     print('output', output.shape, torch.isnan(output).any().item())
@@ -250,6 +261,8 @@ if __name__ == '__main__':
     loss.backward()
     
     # # 查看梯度
+    name_dict = []
     for name, param in classfier.named_parameters():
-        if param.grad is None:
-            print(name)
+        if param.grad.sum() == 0:
+            name_dict.append(name)
+    print(name_dict) 

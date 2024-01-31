@@ -44,6 +44,10 @@ def train(model, dataloader, optimizer, loss_fcn, device, epoch):
         # torch.nn.utils.clip_grad_norm_(model.parameters(), 1e-3)
         optimizer.step()
 
+        for name, param in model.named_parameters():
+            if param.grad.sum() == 0:
+                print(name)
+
         metric['acc'] += train_acc
         metric['micro_f1'] += train_micro_f1
         metric['macro_f1'] += train_macro_f1
