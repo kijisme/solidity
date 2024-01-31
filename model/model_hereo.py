@@ -136,38 +136,38 @@ class graphClassify(nn.Module):
                 layer.reset_parameters()
 
     # 拆分成子图处理
-    # def forward(self, batched_graph):
+    def forward(self, batched_graph):
         
-    #     batch_output = []
-    #     for g_name in batched_graph:
-    #         file_ids = self.filename_mapping[g_name]
-    #         node_mask = {}
-    #         for node_type in self.node_types:
-    #             mask = self.symmetrical_global_graph.ndata['filename'][node_type] == file_ids
-    #             if mask.sum(0) != 0:
-    #                 node_mask[node_type] = mask 
-    #         # 获取子图（相同的结构数据）
-    #         sub_graph = dgl.node_subgraph(self.symmetrical_global_graph, node_mask)
-    #         # 特征聚合
-    #         attribute_emb = sub_graph.ndata['attribute']
-    #         content_emb = sub_graph.ndata['content']
-    #         # [node_num, in_size]
-    #         # print(attribute_emb.dtype, content_emb.dtype)
-    #         fuse_emb = self.fuse(attribute_emb, content_emb)
-    #         sub_graph.ndata['feat'] = fuse_emb
-    #         # sub_graph.ndata['feat'] = attribute_emb
-    #         features =  self.han(sub_graph, sub_graph.ndata['feat'])
-    #         sub_graph.ndata['h'] = features
-    #         # 聚合特征
-    #         hg = []
-    #         for _, feature in sub_graph.ndata['h'].items():
-    #             hg.append(feature)
-    #         hg = torch.vstack(hg).sum(0)
-    #         batch_output.append(hg)
-    #     batch_output = torch.vstack(batch_output)
-    #     output = self.classify(batch_output)
+        batch_output = []
+        for g_name in batched_graph:
+            file_ids = self.filename_mapping[g_name]
+            node_mask = {}
+            for node_type in self.node_types:
+                mask = self.symmetrical_global_graph.ndata['filename'][node_type] == file_ids
+                if mask.sum(0) != 0:
+                    node_mask[node_type] = mask 
+            # 获取子图（相同的结构数据）
+            sub_graph = dgl.node_subgraph(self.symmetrical_global_graph, node_mask)
+            # 特征聚合
+            attribute_emb = sub_graph.ndata['attribute']
+            content_emb = sub_graph.ndata['content']
+            # [node_num, in_size]
+            # print(attribute_emb.dtype, content_emb.dtype)
+            fuse_emb = self.fuse(attribute_emb, content_emb)
+            sub_graph.ndata['feat'] = fuse_emb
+            # sub_graph.ndata['feat'] = attribute_emb
+            features =  self.han(sub_graph, sub_graph.ndata['feat'])
+            sub_graph.ndata['h'] = features
+            # 聚合特征
+            hg = []
+            for _, feature in sub_graph.ndata['h'].items():
+                hg.append(feature)
+            hg = torch.vstack(hg).sum(0)
+            batch_output.append(hg)
+        batch_output = torch.vstack(batch_output)
+        output = self.classify(batch_output)
 
-    #     return output
+        return output
 
     # 全局图处理
     # def forward(self, batched_graph):
@@ -207,40 +207,40 @@ class graphClassify(nn.Module):
             
 
 
-    # 论文方式处理
-    def forward(self, batched_graph):
+    # # 论文方式处理
+    # def forward(self, batched_graph):
 
-        batch_output = []
+    #     batch_output = []
 
-        attribute_emb = self.symmetrical_global_graph.ndata['attribute']
-        content_emb = self.symmetrical_global_graph.ndata['content']
+    #     attribute_emb = self.symmetrical_global_graph.ndata['attribute']
+    #     content_emb = self.symmetrical_global_graph.ndata['content']
         
-        fuse_emb = self.fuse(attribute_emb, content_emb)
-        self.symmetrical_global_graph.ndata['feat'] = fuse_emb
+    #     fuse_emb = self.fuse(attribute_emb, content_emb)
+    #     self.symmetrical_global_graph.ndata['feat'] = fuse_emb
 
-        # [node_type] [node_num, hidden_size * num_num]
-        features =  self.han(self.symmetrical_global_graph, self.symmetrical_global_graph.ndata['feat'])
-        self.symmetrical_global_graph.ndata['h'] = features
+    #     # [node_type] [node_num, hidden_size * num_num]
+    #     features =  self.han(self.symmetrical_global_graph, self.symmetrical_global_graph.ndata['feat'])
+    #     self.symmetrical_global_graph.ndata['h'] = features
 
-        for g_name in batched_graph:
-            file_ids = self.filename_mapping[g_name]
-            graph_embedded = []
-            for node_type in self.node_types:
-                file_mask = self.symmetrical_global_graph.ndata['filename'][node_type] == file_ids
-                file_mask = torch.tensor(file_mask, dtype=torch.float)
-                # [feat, node_num] * [node_num, 1]
-                # [feat]
-                print(node_type, torch.matmul(features[node_type].permute(1, 0), file_mask).sum())
-                graph_embedded.append(torch.matmul(features[node_type].permute(1, 0), file_mask))
+    #     for g_name in batched_graph:
+    #         file_ids = self.filename_mapping[g_name]
+    #         graph_embedded = []
+    #         for node_type in self.node_types:
+    #             file_mask = self.symmetrical_global_graph.ndata['filename'][node_type] == file_ids
+    #             file_mask = torch.tensor(file_mask, dtype=torch.float)
+    #             # [feat, node_num] * [node_num, 1]
+    #             # [feat]
+    #             print(node_type, torch.matmul(features[node_type].permute(1, 0), file_mask).sum())
+    #             graph_embedded.append(torch.matmul(features[node_type].permute(1, 0), file_mask))
             
-            graph_embedded = torch.vstack(graph_embedded).mean(0)
-            # [feat]
-            batch_output.append(graph_embedded)
-        # 分类
-        # [batch, feat]
-        batch_output = torch.vstack(batch_output)
-        output = self.classify(batch_output)
-        return output
+    #         graph_embedded = torch.vstack(graph_embedded).mean(0)
+    #         # [feat]
+    #         batch_output.append(graph_embedded)
+    #     # 分类
+    #     # [batch, feat]
+    #     batch_output = torch.vstack(batch_output)
+    #     output = self.classify(batch_output)
+    #     return output
        
 
 '''测试单个文件'''
